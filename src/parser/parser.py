@@ -1,25 +1,72 @@
-import ply.lex as lex
 import ply.yacc as yacc
 import lexer
 
-tokens = lexer.tokens
 
-def p_expr(p):
-		'''expr : expr AND expr
-				| expr OR expr
-				| NOT expr
-				| expr IMPLICATION expr
-				| expr EQUALS expr
-				| GLOBAL expr
-				| FUTURE expr
-				| NEXT expr
-				| expr UNTIL expr
-				| expr RELEASE expr
-				| expr WEAK_UNTIL expr
-				| LITERAL'''
+class Expression(object):
+    '''base, abstract common class'''
+    pass
 
-yacc.yacc()
+class UnaryFormula(Expression):
+    '''handle uniry formulas'''
+    
+    def __init__(self, p):
+        self.__formula = p[2]
+        p[0] = p[2] 
+        
+class Parser(object):
+
+    precedence = (
+        ('left', 'IMPLICATION', 'EQUALS'),
+        ('left', 'AND', 'OR'),
+        ('left', 'UNTIL', 'RELEASE', 'WEAK_UNTIL'),   
+        ('left', 'GLOBALLY', 'EVENTUALLY'),
+        ('right', 'NOT', 'NEXT'),
+    )
+
+
+    def __init__(self):
+        self.lexer = None
+        
+#tokens have to be always the same. Lexers have to inherit from Lexer class
+        self.tokens = lexer.Lexer.tokens
+        
+        self.__build()
+
+    def p_expr(self, p):
+        '''expr : expr AND expr
+                | expr OR expr
+                | NOT expr
+                | expr IMPLICATION expr
+                | expr EQUALS expr
+                | GLOBALLY expr
+                | EVENTUALLY expr
+                | NEXT expr
+                | expr UNTIL expr
+                | expr RELEASE expr
+                | expr WEAK_UNTIL expr
+                | LITERAL
+                | LPAREN expr RPAREN '''
+
+
+        print p[1]
+#    print p[2]
+#    print p[3]
+
+    def p_error(self, p):
+        print 'Error'
+        print p
+
+# Build the parser
+    def __build(self,**kwargs):
+        self.parser = yacc.yacc(module=self, **kwargs)
+
+    def parse(self, str, lexer = lexer.Lexer(), **kwargs):
+        ''' s '''
+        self.lexer = lexer
+        return self.parser.parse(str, lexer = self.lexer.lexer, **kwargs)
 
 if __name__ == '__main__':
-		yacc.parse("h | b")
+    yacc_i = Parser()
+    variable = yacc_i.parse("hello | boob -> h & Xe & (v|e & (sss -> q))")
+    print variable 
 

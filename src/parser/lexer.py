@@ -1,26 +1,63 @@
 import ply.lex as lex
 import ply.yacc
 
-tokens = ['LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALS', 'GLOBAL', 'FUTURE', 'NEXT', 'UNTIL', 'RELEASE', 'WEAK_UNTIL']
 
-t_ignore = ' /t'
-t_AND = r'&'
-t_OR = r'\|'
-t_NOT = r'!'
-t_IMPLICATION = r'->'
-t_EQUALS = r'='
-t_GLOBAL = r'G'
-t_FUTURE = r'F'
-t_NEXT = r'X'
-t_UNTIL = r'U'
-t_RELEASE = r'R'
-t_WEAK_UNTIL = r'W'
-t_LITERAL = r'[a-zA-Z_][a-zA-Z0-9_]*'
+class BaseSymbolSet(object):
+    '''
+    base symbol class
+    '''
+
+    AND = r'&'
+    OR = r'\|'
+    GLOBALLY = r'G'
+    EVENTUALLY = r'F'
+    NEXT = r'X'
+    UNTIL = r'U'
+    RELEASE = r'R'
+    WEAK_UNTIL = r'W'
+    IMPLICATION = r'->'
+    EQUALS = r'<->'
+    NOT = r'!'
+    TRUE = r'1'
+    FALSE = r'0'
+
+class Lexer(object):
+    tokens = ['LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALS', 
+        'GLOBALLY', 'EVENTUALLY', 'NEXT', 'UNTIL', 'RELEASE', 
+        'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE'] 
+
 
 # Error handling rule
-def t_error(t):
-		print "Illegal character '%s'" % t.value[0]
-		t.lexer.skip(1)
+    def t_error(self, t):
+            print "Illegal character '%s'" % t.value[0]
+            t.lexer.skip(1)
+
+
+    def __init__(self, symbolSetCls = BaseSymbolSet):
+
+        self.t_ignore = ' /t' 
+        self.t_AND = symbolSetCls.AND 
+        self.t_OR =  symbolSetCls.OR
+        self.t_NOT = symbolSetCls.NOT
+        self.t_IMPLICATION = symbolSetCls.IMPLICATION
+        self.t_EQUALS = symbolSetCls.EQUALS
+        self.t_GLOBALLY= symbolSetCls.GLOBALLY
+        self.t_EVENTUALLY= symbolSetCls.EVENTUALLY
+        self.t_NEXT = symbolSetCls.NEXT
+        self.t_UNTIL = symbolSetCls.UNTIL
+        self.t_RELEASE = symbolSetCls.RELEASE
+        self.t_WEAK_UNTIL = symbolSetCls.WEAK_UNTIL
+        self.t_LPAREN = r'\('
+        self.t_RPAREN = r'\)'
+        self.t_TRUE = symbolSetCls.TRUE
+        self.t_FALSE = symbolSetCls.FALSE
+        self.t_LITERAL = r'[a-zA-Z_][a-zA-Z0-9_]*'
+
+        self.__build()
 
 # Build the lexer
-lexer = lex.lex()
+    def __build(self,**kwargs):
+        self.lexer = lex.lex(module=self, **kwargs)
+
+
+
