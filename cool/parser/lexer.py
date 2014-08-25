@@ -1,5 +1,4 @@
 import ply.lex as lex
-import ply.yacc
 
 
 class BaseSymbolSet(object):
@@ -22,15 +21,15 @@ class BaseSymbolSet(object):
     FALSE = r'0'
 
 class Lexer(object):
-    tokens = ['LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALS', 
+    tokens = ['COMMENT', 'LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALS', 
         'GLOBALLY', 'EVENTUALLY', 'NEXT', 'UNTIL', 'RELEASE', 
         'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE'] 
 
 
 # Error handling rule
     def t_error(self, t):
-            print "Illegal character '%s'" % t.value[0]
-            t.lexer.skip(1)
+        print "Illegal character '%s'" % t.value[0]
+        t.lexer.skip(1)
 
 
     def __init__(self, symbolSetCls = BaseSymbolSet):
@@ -52,12 +51,14 @@ class Lexer(object):
         self.t_TRUE = symbolSetCls.TRUE
         self.t_FALSE = symbolSetCls.FALSE
         self.t_LITERAL = r'[a-zA-Z_][a-zA-Z0-9_]*'
-
+        self.t_ignore_COMMENT = r'\#.*'
+        
+        self.lexer = None
         self.__build()
 
 # Build the lexer
     def __build(self,**kwargs):
-        self.lexer = lex.lex(module=self, **kwargs)
+        self.lexer = lex.lex(optimize=1, module=self, **kwargs)
 
 
 
