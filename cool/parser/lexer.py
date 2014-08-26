@@ -21,7 +21,7 @@ class BaseSymbolSet(object):
     FALSE = r'0'
 
 class Lexer(object):
-    tokens = ['COMMENT', 'LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALS', 
+    tokens = ['LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALS', 
         'GLOBALLY', 'EVENTUALLY', 'NEXT', 'UNTIL', 'RELEASE', 
         'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE'] 
 

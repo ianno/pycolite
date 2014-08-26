@@ -8,7 +8,10 @@ used for the generation of the LTL specs.
 '''
 
 import exceptions
-from lexer import BaseSymbolSet
+import parser
+
+from cool.parser.lexer import BaseSymbolSet
+
 
 class LTLFormula(object):
     '''

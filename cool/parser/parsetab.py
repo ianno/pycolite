@@ -5,9 +5,9 @@ _tabversion = '3.2'
 
 _lr_method = 'LALR'
 
-_lr_signature = '\xc5\x8e?\xe3?\xb6L\x08\xb15yC~\x12|A'
+_lr_signature = '\xa1Lw+\xbf1\x16y\x9f\x189\xf0Q#\xf0k'
     
-_lr_action_items = {'AND':([1,2,14,15,16,17,18,19,20,21,22,23,24,],[-12,7,7,7,7,7,7,7,7,7,7,7,7,]),'GLOBAL':([0,3,4,5,6,7,8,9,10,11,12,13,],[3,3,3,3,3,3,3,3,3,3,3,3,]),'EQUALS':([1,2,14,15,16,17,18,19,20,21,22,23,24,],[-12,8,8,8,8,8,8,8,8,8,8,8,8,]),'NEXT':([0,3,4,5,6,7,8,9,10,11,12,13,],[4,4,4,4,4,4,4,4,4,4,4,4,]),'RELEASE':([1,2,14,15,16,17,18,19,20,21,22,23,24,],[-12,10,10,10,10,10,10,10,10,10,10,10,10,]),'LITERAL':([0,3,4,5,6,7,8,9,10,11,12,13,],[1,1,1,1,1,1,1,1,1,1,1,1,]),'FUTURE':([0,3,4,5,6,7,8,9,10,11,12,13,],[5,5,5,5,5,5,5,5,5,5,5,5,]),'NOT':([0,3,4,5,6,7,8,9,10,11,12,13,],[6,6,6,6,6,6,6,6,6,6,6,6,]),'IMPLICATION':([1,2,14,15,16,17,18,19,20,21,22,23,24,],[-12,11,11,11,11,11,11,11,11,11,11,11,11,]),'WEAK_UNTIL':([1,2,14,15,16,17,18,19,20,21,22,23,24,],[-12,13,13,13,13,13,13,13,13,13,13,13,13,]),'UNTIL':([1,2,14,15,16,17,18,19,20,21,22,23,24,],[-12,12,12,12,12,12,12,12,12,12,12,12,12,]),'OR':([1,2,14,15,16,17,18,19,20,21,22,23,24,],[-12,9,9,9,9,9,9,9,9,9,9,9,9,]),'$end':([1,2,14,15,16,17,18,19,20,21,22,23,24,],[-12,0,-6,-8,-7,-3,-1,-5,-2,-10,-4,-9,-11,]),}
+_lr_action_items = {'AND':([2,3,4,9,10,18,19,20,21,22,23,24,25,26,27,28,29,],[-13,-14,11,-12,-7,-8,-6,11,-3,-1,11,-2,-10,11,-9,-11,-15,]),'EVENTUALLY':([0,1,5,6,7,8,11,12,13,14,15,16,17,],[1,1,1,1,1,1,1,1,1,1,1,1,1,]),'FALSE':([0,1,5,6,7,8,11,12,13,14,15,16,17,],[2,2,2,2,2,2,2,2,2,2,2,2,2,]),'UNTIL':([2,3,4,9,10,18,19,20,21,22,23,24,25,26,27,28,29,],[-13,-14,16,-12,-7,-8,-6,16,-3,16,16,16,-10,16,-9,-11,-15,]),'EQUALS':([2,3,4,9,10,18,19,20,21,22,23,24,25,26,27,28,29,],[-13,-14,12,-12,-7,-8,-6,12,-3,-1,-5,-2,-10,-4,-9,-11,-15,]),'NEXT':([0,1,5,6,7,8,11,12,13,14,15,16,17,],[5,5,5,5,5,5,5,5,5,5,5,5,5,]),'GLOBALLY':([0,1,5,6,7,8,11,12,13,14,15,16,17,],[6,6,6,6,6,6,6,6,6,6,6,6,6,]),'RELEASE':([2,3,4,9,10,18,19,20,21,22,23,24,25,26,27,28,29,],[-13,-14,14,-12,-7,-8,-6,14,-3,14,14,14,-10,14,-9,-11,-15,]),'LITERAL':([0,1,5,6,7,8,11,12,13,14,15,16,17,],[3,3,3,3,3,3,3,3,3,3,3,3,3,]),'LPAREN':([0,1,5,6,7,8,11,12,13,14,15,16,17,],[7,7,7,7,7,7,7,7,7,7,7,7,7,]),'NOT':([0,1,5,6,7,8,11,12,13,14,15,16,17,],[8,8,8,8,8,8,8,8,8,8,8,8,8,]),'RPAREN':([2,3,9,10,18,19,20,21,22,23,24,25,26,27,28,29,],[-13,-14,-12,-7,-8,-6,29,-3,-1,-5,-2,-10,-4,-9,-11,-15,]),'IMPLICATION':([2,3,4,9,10,18,19,20,21,22,23,24,25,26,27,28,29,],[-13,-14,15,-12,-7,-8,-6,15,-3,-1,-5,-2,-10,-4,-9,-11,-15,]),'WEAK_UNTIL':([2,3,4,9,10,18,19,20,21,22,23,24,25,26,27,28,29,],[-13,-14,17,-12,-7,-8,-6,17,-3,17,17,17,-10,17,-9,-11,-15,]),'TRUE':([0,1,5,6,7,8,11,12,13,14,15,16,17,],[9,9,9,9,9,9,9,9,9,9,9,9,9,]),'OR':([2,3,4,9,10,18,19,20,21,22,23,24,25,26,27,28,29,],[-13,-14,13,-12,-7,-8,-6,13,-3,-1,13,-2,-10,13,-9,-11,-15,]),'$end':([2,3,4,9,10,18,19,21,22,23,24,25,26,27,28,29,],[-13,-14,0,-12,-7,-8,-6,-3,-1,-5,-2,-10,-4,-9,-11,-15,]),}
 
 _lr_action = { }
 for _k, _v in _lr_action_items.items():
@@ -16,7 +16,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'expr':([0,3,4,5,6,7,8,9,10,11,12,13,],[2,14,15,16,17,18,19,20,21,22,23,24,]),}
+_lr_goto_items = {'expr':([0,1,5,6,7,8,11,12,13,14,15,16,17,],[4,10,18,19,20,21,22,23,24,25,26,27,28,]),}
 
 _lr_goto = { }
 for _k, _v in _lr_goto_items.items():
@@ -26,16 +26,19 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> expr","S'",1,None,None,None),
-  ('expr -> expr AND expr','expr',3,'p_expr','parser.py',8),
-  ('expr -> expr OR expr','expr',3,'p_expr','parser.py',9),
-  ('expr -> NOT expr','expr',2,'p_expr','parser.py',10),
-  ('expr -> expr IMPLICATION expr','expr',3,'p_expr','parser.py',11),
-  ('expr -> expr EQUALS expr','expr',3,'p_expr','parser.py',12),
-  ('expr -> GLOBAL expr','expr',2,'p_expr','parser.py',13),
-  ('expr -> FUTURE expr','expr',2,'p_expr','parser.py',14),
-  ('expr -> NEXT expr','expr',2,'p_expr','parser.py',15),
-  ('expr -> expr UNTIL expr','expr',3,'p_expr','parser.py',16),
-  ('expr -> expr RELEASE expr','expr',3,'p_expr','parser.py',17),
-  ('expr -> expr WEAK_UNTIL expr','expr',3,'p_expr','parser.py',18),
-  ('expr -> LITERAL','expr',1,'p_expr','parser.py',19),
+  ('expr -> expr AND expr','expr',3,'p_and','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',55),
+  ('expr -> expr OR expr','expr',3,'p_or','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',64),
+  ('expr -> NOT expr','expr',2,'p_not','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',68),
+  ('expr -> expr IMPLICATION expr','expr',3,'p_implication','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',72),
+  ('expr -> expr EQUALS expr','expr',3,'p_equals','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',76),
+  ('expr -> GLOBALLY expr','expr',2,'p_globally','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',80),
+  ('expr -> EVENTUALLY expr','expr',2,'p_eventually','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',84),
+  ('expr -> NEXT expr','expr',2,'p_next','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',88),
+  ('expr -> expr UNTIL expr','expr',3,'p_until','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',92),
+  ('expr -> expr RELEASE expr','expr',3,'p_release','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',96),
+  ('expr -> expr WEAK_UNTIL expr','expr',3,'p_weak_until','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',100),
+  ('expr -> TRUE','expr',1,'p_true','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',104),
+  ('expr -> FALSE','expr',1,'p_false','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',108),
+  ('expr -> LITERAL','expr',1,'p_literal','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',112),
+  ('expr -> LPAREN expr RPAREN','expr',3,'p_parenthesis','/Users/antonio/Dropbox/workspace/cool/cool/parser/parser.py',117),
 ]
