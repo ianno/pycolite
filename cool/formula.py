@@ -250,4 +250,69 @@ class InvalidFormulaException(Exception):
     '''
     doc
     '''
-    pass  
+    pass
+
+
+
+class UniqueIdExtractor(object):
+    '''
+    
+    '''
+    
+    def __init__(self):
+        '''
+        
+        '''
+        
+        self.__index = -1
+        self.__dictionary = {}
+        
+    
+    def get_id(self, registering_obj, reset = False):
+        '''
+        
+        :param generic_object:
+        :type generic_object: object
+        '''
+        
+        obj_id = id(registering_obj)
+        
+        if (not self.__dictionary.has_key(obj_id)) or reset:
+            self.__dictionary[obj_id] = self.__index
+            self.__index = self.__index + 1
+            
+        return self.__dictionary[obj_id]
+
+class LiteralNamePool(object):
+    '''
+    
+    '''
+    
+    __dictionary = {}
+    
+    @classmethod
+    def get_unique_name(cls, registering_obj, base_name = '', reset = False):
+        '''
+        
+        :param cls:
+        :type cls:
+        :param registering_obj:
+        :type registering_obj: object
+        :param base_name:
+        :type base_name: string
+        '''
+        
+        if not cls.__dictionary.has_key(base_name):
+            cls.__dictionary[base_name] = UniqueIdExtractor()
+            
+        number_extractor = cls.__dictionary[base_name]
+        
+        obj_number = number_extractor.get_attribute_number(registering_obj, reset)
+        
+        if base_name != '' and obj_number == -1:
+            return base_name
+        
+        return '%s%d' % (base_name, obj_number)  
+    
+    
+    
