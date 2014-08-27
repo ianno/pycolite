@@ -5,13 +5,7 @@ import ply.yacc as yacc
 
 class Parser(object):
 
-    precedence = (
-        ('left', 'IMPLICATION', 'EQUALS'),
-        ('left', 'AND', 'OR'),
-        ('left', 'UNTIL', 'RELEASE', 'WEAK_UNTIL'),   
-        ('left', 'GLOBALLY', 'EVENTUALLY'),
-        ('right', 'NOT', 'NEXT'),
-    )
+    precedence = formula.PRECEDENCE_TUPLE
 
 
     def __init__(self):
@@ -40,8 +34,8 @@ class Parser(object):
         '''expr : NOT expr'''
         p[0] = formula.Negation(p[2])
         
-    def p_implication(self, p):
-        '''expr : expr IMPLICATION expr'''
+    def p_implies(self, p):
+        '''expr : expr IMPLIES expr'''
         p[0] = formula.Implication(p[1], p[3])
         
     def p_equals(self, p):
@@ -82,7 +76,8 @@ class Parser(object):
         
     def p_literal(self, p):
         '''expr : LITERAL'''
-        p[0] = p[1]
+        #add more here on literals
+        p[0] = formula.Literal(p[1])
         #print p[1]
         
     def p_parenthesis(self, p):
@@ -105,6 +100,7 @@ class Parser(object):
 if __name__ == '__main__':
     yacc_i = Parser()
     variable = yacc_i.parse("hello | boob -> h & Xe & (v|e & (sss -> q)) #fiu")
-    print variable 
+    print variable
+    print variable.generate()
     
     
