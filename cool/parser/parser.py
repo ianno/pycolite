@@ -99,7 +99,7 @@ class Parser(object):
 
 if __name__ == '__main__':
     yacc_i = Parser()
-    variable = yacc_i.parse("hello | boob -> h & Xe & (v|e & (sss -> q)) #fiu")
+    variable = yacc_i.parse("(hello | (boob)) -> h & Xe & (v|e & (sss -> q)) #fiu")
     print variable
     print variable.generate()
     
