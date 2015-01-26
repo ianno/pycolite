@@ -7,10 +7,12 @@ used for the generation of the LTL specs.
 @author: antonio
 '''
 
-from cool.parser.lexer import BASE_SYMBOL_SET
+from cool.parser.lexer import BaseSymbolSet
+from cool.attribute import Attribute, AttributeNamePool
+from abc import abstractmethod
 
 PRECEDENCE_TUPLE = (
-    ('left', 'IMPLIES', 'EQUALS'),
+    ('left', 'IMPLICATION', 'EQUALITY'),
     ('left', 'AND', 'OR'),
     ('left', 'UNTIL', 'RELEASE', 'WEAK_UNTIL'),
     ('left', 'GLOBALLY', 'EVENTUALLY'),
@@ -45,45 +47,27 @@ class LTLFormula(object):
 
     Symbol = None
 
-    def __init__(self):
+    def generate(self, symbol_set = None):
         '''
-        Constructor
+        doc
         '''
+        if symbol_set == None:
+            symbol_set = BaseSymbolSet
 
-        pass
+        return symbol_set.symbols[self.Symbol]
 
+
+class Literal(Attribute, LTLFormula):
+    '''
+    Extend Attribute class to generate the correct name in the formula factory
+    '''
 
     def generate(self, symbol_set = None):
         '''
         doc
         '''
         if symbol_set == None:
-            symbol_set = BASE_SYMBOL_SET
-
-        return symbol_set[self.Symbol]
-
-
-class Literal(LTLFormula):
-    '''
-    doc
-    '''
-
-    def __init__(self, base_name, owner_object = None):
-        '''
-        doc
-        '''
-        LTLFormula.__init__(self)
-        self.base_name = base_name
-
-        self.unique_name = LiteralNamePool.get_unique_name(owner_object, base_name)
-
-
-    def generate(self, symbol_set = None):
-        '''
-        doc
-        '''
-        if symbol_set == None:
-            symbol_set = BASE_SYMBOL_SET
+            symbol_set = BaseSymbolSet
 
         return self.unique_name
 
@@ -125,7 +109,7 @@ class BinaryFormula(LTLFormula):
         doc
         '''
         if symbol_set == None:
-            symbol_set = BASE_SYMBOL_SET
+            symbol_set = BaseSymbolSet
 
 
         left_symbol = self.__left_formula.Symbol
@@ -160,7 +144,7 @@ class BinaryFormula(LTLFormula):
         else:
             raise NotImplementedError
 
-        return '%s %s %s' % (left_string, symbol_set[self.Symbol], right_string)
+        return '%s %s %s' % (left_string, symbol_set.symbols[self.Symbol], right_string)
 
 
 
@@ -182,7 +166,7 @@ class UnaryFormula(LTLFormula):
         doc
         '''
         if symbol_set == None:
-            symbol_set = BASE_SYMBOL_SET
+            symbol_set = BaseSymbolSet
 
         right_symbol = self.__right_formula.Symbol
 
@@ -201,7 +185,7 @@ class UnaryFormula(LTLFormula):
         else:
             raise NotImplementedError
 
-        return '%s %s' % (symbol_set[self.Symbol], right_string)
+        return '%s %s' % (symbol_set.symbols[self.Symbol], right_string)
 
 
 class Conjunction(BinaryFormula):
@@ -224,7 +208,7 @@ class Implication(BinaryFormula):
     '''
     doc
     '''
-    Symbol = 'IMPLIES'
+    Symbol = 'IMPLICATION'
 
 
 
@@ -232,7 +216,7 @@ class Equivalence(BinaryFormula):
     '''
     doc
     '''
-    Symbol = 'EQUALS'
+    Symbol = 'EQUALITY'
 
 
 

@@ -1,4 +1,4 @@
-"""
+'''
 This module contains the attribute manager implementation.
 Attributes are interesting animals.
 In fact, we need a machanism to provide new literals, as well as
@@ -6,7 +6,7 @@ a mechanism to merge different attributes into the same one.
 This module uses the observer pattern.
 
 Author: Antonio Iannopollo
-"""
+'''
 
 from cool.observer import Subject
 
@@ -77,16 +77,16 @@ class AttributeNamePool(object):
 
 
 class Attribute(Subject):
-    """
+    '''
     This class implements the concept of attribute.
     An attribute is an entity which can be referenced by several objects.
     It can notify the referencing objects if two attribute are merged together.
     Whatever object is going to interact with a Attribute has to inherit from
     Observer.
-    """
+    '''
 
     def __init__(self, base_name, context = None):
-        """
+        '''
         Create a new attribute, initializing the Subject class structures and
         generating a new unique name.
         It is possible to assign also a context, in case there is the
@@ -96,7 +96,7 @@ class Attribute(Subject):
         :type base_name: string
         :param context: context object
         :type context: object
-        """
+        '''
         Subject.__init__(self)
 
         self.merging_attribute = None
@@ -104,7 +104,7 @@ class Attribute(Subject):
         self.unique_name = AttributeNamePool.get_unique_name(context, self.base_name)
 
     def set_state(self, merging_attribute):
-        """
+        '''
         Set the new state. New state means that this attribute is going
         to be discarded and a new one is going to be used.
         Once set, this method notify all the observers
@@ -112,7 +112,7 @@ class Attribute(Subject):
         :param merging_attribute: the new attribute all the observers should
                                 switch to.
         :type merging_attribute: Attribute
-        """
+        '''
         if merging_attribute == None:
             raise AttributeStateError('merging_attribute set to be None')
 
@@ -120,18 +120,18 @@ class Attribute(Subject):
         self.notify()
 
     def get_state(self):
-        """
+        '''
         Returns the last new attribute
-        """
+        '''
         if self.merging_attribute == None:
             raise AttributeStateError('requesting attribute state before it is set')
         return self.merging_attribute
 
 class AttributeStateError(Exception):
-    """
+    '''
     Exception returned if an Attribute is required his
     state before it has been set
-    """
+    '''
 
 
 
