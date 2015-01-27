@@ -10,6 +10,7 @@ used for the generation of the LTL specs.
 from cool.parser.lexer import BaseSymbolSet
 from cool.attribute import Attribute, AttributeNamePool
 from abc import abstractmethod
+from observer import Observer
 
 PRECEDENCE_TUPLE = (
     ('left', 'IMPLICATION', 'EQUALITY'),
@@ -40,12 +41,14 @@ def find_precedence_index(symbol, precedence_tuple=None):
 
 
 
-class LTLFormula(object):
+class LTLFormula(Observer):
     '''
     Abstract class
     '''
 
     Symbol = None
+    literals = {}
+    IsLiteral = False
 
     def generate(self, symbol_set = None):
         '''
@@ -56,11 +59,67 @@ class LTLFormula(object):
 
         return symbol_set.symbols[self.Symbol]
 
+    def update(self, updated_subject):
+        '''
+        Implementation of the update method from a attribute according to
+        the observer pattern
+        '''
+
+        updated_attribute = updated_subject.get_state()
+
+        if updated_attribute.base_name not in self.literals:
+            raise KeyError('attribute not in literals dict for the furmula')
+
+        #attach to the new attribute
+        updated_attribute.attach(self)
+
+        #detach from the current attribute
+        self.literals[ updated_attribute.base_name  ].detach()
+
+        #update the literals list
+        self.literals[updated_attribute.base_name] = updated_attribute
+
+
+
+    def get_literals_view(self):
+        '''
+        Returns a dictionary view including all the literals in the formula
+        '''
+
+        return self.literals.viewitems()
+
+
+    def process_literal(self, literal_candidate):
+        '''
+        add a new literal to the internal dict if it is the case
+        '''
+        if literal_candidate.IsLiteral:
+            if literal_candidate.base_name in self.literals:
+                literal_candidate.merge( self.literals[ literal_candidate.base_name ] )
+            else:
+                literal_candidate.attach(self)
+                self.literals[literal_candidate.base_name] = literal_candidate
+
 
 class Literal(Attribute, LTLFormula):
     '''
     Extend Attribute class to generate the correct name in the formula factory
     '''
+
+    IsLiteral = True
+
+#    def __init__(self, base_name, context = None):
+#        '''
+#        instantiate a new literal.
+#
+#        :paramenter base_name: literal name, ok if not unique
+#        :type base_name: string
+#        :parameter context: context realative to the unique literal name
+#        generation
+#        :type context: object
+#        '''
+#        Attribute.__init__(self, base_name, context)
+#        self.literals[base_name] = self
 
     def generate(self, symbol_set = None):
         '''
@@ -100,8 +159,12 @@ class BinaryFormula(LTLFormula):
         doc
         '''
         LTLFormula.__init__(self)
-        self.__left_formula = left_formula
-        self.__right_formula = right_formula
+        self.left_formula = left_formula
+        self.right_formula = right_formula
+
+        #register as an observer to immediate descendent literals
+        for literal_candidate in (left_formula, right_formula):
+            self.process_literal(literal_candidate)
 
 
     def generate(self, symbol_set = None):
@@ -112,8 +175,8 @@ class BinaryFormula(LTLFormula):
             symbol_set = BaseSymbolSet
 
 
-        left_symbol = self.__left_formula.Symbol
-        right_symbol = self.__right_formula.Symbol
+        left_symbol = self.left_formula.Symbol
+        right_symbol = self.right_formula.Symbol
 
         current_symbol_index, current_symbol_direction = find_precedence_index(self.Symbol)
 
@@ -128,8 +191,8 @@ class BinaryFormula(LTLFormula):
             right_index = len(PRECEDENCE_TUPLE)
 
 
-        left_string = self.__left_formula.generate(symbol_set)
-        right_string = self.__right_formula.generate(symbol_set)
+        left_string = self.left_formula.generate(symbol_set)
+        right_string = self.right_formula.generate(symbol_set)
 
         if current_symbol_direction == 'left':
             if left_index < current_symbol_index:
@@ -158,7 +221,10 @@ class UnaryFormula(LTLFormula):
         doc
         '''
         LTLFormula.__init__(self)
-        self.__right_formula = formula
+        self.right_formula = formula
+
+        #process possible new literal
+        self.process_literal(formula)
 
 
     def generate(self, symbol_set = None):
@@ -168,7 +234,7 @@ class UnaryFormula(LTLFormula):
         if symbol_set == None:
             symbol_set = BaseSymbolSet
 
-        right_symbol = self.__right_formula.Symbol
+        right_symbol = self.right_formula.Symbol
 
         current_symbol_index, current_symbol_direction = find_precedence_index(self.Symbol)
 
@@ -177,7 +243,7 @@ class UnaryFormula(LTLFormula):
         except NotFoundError:
             right_index = len(PRECEDENCE_TUPLE)
 
-        right_string = self.__right_formula.generate(symbol_set)
+        right_string = self.right_formula.generate(symbol_set)
 
         if current_symbol_direction == 'right':
             if right_index < current_symbol_index:

@@ -119,6 +119,13 @@ class Attribute(Subject):
         self.merging_attribute = merging_attribute
         self.notify()
 
+    def merge(self, merging_attribute):
+        '''
+        More user-friendly wrapper to the method set_state
+        '''
+
+        self.set_state(merging_attribute)
+
     def get_state(self):
         '''
         Returns the last new attribute

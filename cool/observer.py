@@ -31,7 +31,7 @@ class Subject:
     def notify(self):
         '''Notify observers that something changed'''
         for observer in self.observers:
-            observer.notify(self)
+            observer.update(self)
 
     @abstractmethod
     def get_state(self):
@@ -50,7 +50,7 @@ class Observer(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def update(self):
+    def update(self, updated_subject):
         '''receive an update from a subject'''
         pass
 
