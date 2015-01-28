@@ -21,6 +21,7 @@ class Parser(object):
     def p_error(self, p):
         print 'Error'
         print p
+        raise GeneralError(p)
 
     def p_and(self, p):
         '''expr : expr AND expr'''
@@ -68,17 +69,16 @@ class Parser(object):
 
     def p_true(self, p):
         '''expr : TRUE'''
-        p[0] = formula.TrueFormula(p[1])
+        p[0] = formula.TrueFormula()
 
     def p_false(self, p):
         '''expr : FALSE'''
-        p[0] = formula.FalseFormula(p[1])
+        p[0] = formula.FalseFormula()
 
     def p_literal(self, p):
         '''expr : LITERAL'''
         #add more here on literals
         p[0] = formula.Literal(p[1])
-        #print p[1]
 
     def p_parenthesis(self, p):
         '''expr : LPAREN expr RPAREN'''
@@ -95,11 +95,22 @@ class Parser(object):
         return self.parser.parse(string, lexer = self.lexer.lexer, **kwargs)
 
 
+#define a module-level parser object
+LTL_PARSER = Parser()
+
+
+class GeneralError(Exception):
+    '''
+    Exception to be raised in case of a generic
+    parsing error
+    '''
+    pass
+
 
 
 if __name__ == '__main__':
     yacc_i = Parser()
-    variable = yacc_i.parse("(hello | (boob)) -> h & Xe & (v|e & (sss -> q)) #fiu")
+    variable = yacc_i.parse("G(hello |   test) -> h & Xe & (v|e & (sss -> q)) #fiu")
     print variable
     print variable.generate()
 

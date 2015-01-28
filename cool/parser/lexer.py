@@ -28,20 +28,22 @@ class Lexer(object):
         'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE']
 
 
-# Error handling rule
     def t_COMMENT(self, t):
         r'\#.*'
         pass
 
+    # Error handling rule
     # No return value. Token discarded
     def t_error(self, t):
             print "Illegal character '%s'" % t.value[0]
             t.lexer.skip(1)
+            #raise IllegalValueError(t.value[0])
+
 
 
     def __init__(self, symbolSetCls = BaseSymbolSet):
 
-        self.t_ignore = ' /t'
+        self.t_ignore = ' \t'
         self.t_AND = symbolSetCls.symbols['AND']
         self.t_OR =  re.escape(symbolSetCls.symbols['OR'])
         self.t_NOT = symbolSetCls.symbols['NOT']
@@ -57,7 +59,7 @@ class Lexer(object):
         self.t_RPAREN = r'\)'
         self.t_TRUE = symbolSetCls.symbols['TRUE']
         self.t_FALSE = symbolSetCls.symbols['FALSE']
-        self.t_LITERAL = r'[a-zA-Z_][a-zA-Z0-9_]*'
+        self.t_LITERAL = r'[a-z_][a-zA-Z0-9_]*'
 
         self.__build()
 
@@ -66,4 +68,5 @@ class Lexer(object):
         self.lexer = lex.lex(module=self, **kwargs)
 
 
-
+#class IllegalValueError(Exception):
+#    pass
