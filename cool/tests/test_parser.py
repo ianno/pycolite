@@ -40,6 +40,9 @@ def string_formula():
     return "G(this & (is) | a & !X(correct & formula)) -> F(everything & is | fine) "
 
 def test_str_formula(string_formula, parser):
+    '''
+    test a formula from a valid string
+    '''
     try:
         formula = parser.parse(string_formula)
     except Exception as error:
