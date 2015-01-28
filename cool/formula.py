@@ -48,7 +48,7 @@ class LTLFormula(Observer):
 
     Symbol = None
     literals = {}
-    IsLiteral = False
+    is_literal = False
 
     def generate(self, symbol_set = None):
         '''
@@ -81,7 +81,7 @@ class LTLFormula(Observer):
 
 
 
-    def get_literals_view(self):
+    def get_literal_items(self):
         '''
         Returns a dictionary view including all the literals in the formula
         '''
@@ -93,7 +93,7 @@ class LTLFormula(Observer):
         '''
         add a new literal to the internal dict if it is the case
         '''
-        if literal_candidate.IsLiteral:
+        if literal_candidate.is_literal:
             if literal_candidate.base_name in self.literals:
                 literal_candidate.merge( self.literals[ literal_candidate.base_name ] )
             else:
@@ -106,20 +106,19 @@ class Literal(Attribute, LTLFormula):
     Extend Attribute class to generate the correct name in the formula factory
     '''
 
-    IsLiteral = True
+    is_literal = True
 
-#    def __init__(self, base_name, context = None):
-#        '''
-#        instantiate a new literal.
-#
-#        :paramenter base_name: literal name, ok if not unique
-#        :type base_name: string
-#        :parameter context: context realative to the unique literal name
-#        generation
-#        :type context: object
-#        '''
-#        Attribute.__init__(self, base_name, context)
-#        self.literals[base_name] = self
+    def __init__(self, base_name, context = None):
+        '''
+        instantiate a new literal.
+
+        :paramenter base_name: literal name, ok if not unique
+        :type base_name: string
+        :parameter context: context realative to the unique literal name
+        generation
+        :type context: object
+        '''
+        Attribute.__init__(self, base_name, context)
 
     def generate(self, symbol_set = None):
         '''

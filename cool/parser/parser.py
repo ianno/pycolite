@@ -78,7 +78,7 @@ class Parser(object):
     def p_literal(self, p):
         '''expr : LITERAL'''
         #add more here on literals
-        p[0] = formula.Literal(p[1])
+        p[0] = formula.Literal(p[1], self.context)
 
     def p_parenthesis(self, p):
         '''expr : LPAREN expr RPAREN'''
@@ -89,9 +89,11 @@ class Parser(object):
     def __build(self, **kwargs):
         self.parser = yacc.yacc(module=self, **kwargs)
 
-    def parse(self, string, lexer = lexer.Lexer(), **kwargs):
+    def parse(self, string, context = None, symbolSetCls = lexer.BaseSymbolSet, **kwargs):
         ''' s '''
-        self.lexer = lexer
+        self.lexer = lexer.Lexer(symbolSetCls)
+        self.context = context
+
         return self.parser.parse(string, lexer = self.lexer.lexer, **kwargs)
 
 
