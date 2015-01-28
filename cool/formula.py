@@ -16,7 +16,7 @@ PRECEDENCE_TUPLE = (
     ('left', 'IMPLICATION', 'EQUALITY'),
     ('left', 'AND', 'OR'),
     ('left', 'UNTIL', 'RELEASE', 'WEAK_UNTIL'),
-    ('left', 'GLOBALLY', 'EVENTUALLY'),
+    ('right', 'GLOBALLY', 'EVENTUALLY'),
     ('right', 'NOT', 'NEXT'),
 )
 
