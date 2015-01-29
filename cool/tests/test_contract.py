@@ -24,7 +24,7 @@ def test_constructor(basic_params):
     '''
     test basic Contract constructor, no errors expected
     '''
-    contract = Contract(basic_params[0], basic_params[1], basic_params[2], basic_params[3])
+    contract = Contract('C', basic_params[0], basic_params[1], basic_params[2], basic_params[3])
     assert True
 
 @pytest.fixture()
@@ -42,7 +42,7 @@ def test_wrong_ports(wrong_ports):
     expects a PortDeclarationError exception
     '''
     with pytest.raises(PortDeclarationError):
-        contract = Contract(wrong_ports[0], wrong_ports[1], wrong_ports[2], wrong_ports[3])
+        contract = Contract('C', wrong_ports[0], wrong_ports[1], wrong_ports[2], wrong_ports[3])
 
 @pytest.fixture()
 def wrong_mapping():
@@ -59,4 +59,4 @@ def test_wrong_mapping(wrong_mapping):
     expects a PortMappingError exception
     '''
     with pytest.raises(PortMappingError):
-        contract = Contract(wrong_mapping[0], wrong_mapping[1], wrong_mapping[2], wrong_mapping[3])
+        contract = Contract('C', wrong_mapping[0], wrong_mapping[1], wrong_mapping[2], wrong_mapping[3])
