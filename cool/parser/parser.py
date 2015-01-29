@@ -89,9 +89,9 @@ class Parser(object):
     def __build(self, **kwargs):
         self.parser = yacc.yacc(module=self, **kwargs)
 
-    def parse(self, string, context = None, symbolSetCls = lexer.BaseSymbolSet, **kwargs):
+    def parse(self, string, context = None, symbol_set_cls = lexer.BaseSymbolSet, **kwargs):
         ''' s '''
-        self.lexer = lexer.Lexer(symbolSetCls)
+        self.lexer = lexer.Lexer(symbol_set_cls)
         self.context = context
 
         return self.parser.parse(string, lexer = self.lexer.lexer, **kwargs)

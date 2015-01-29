@@ -41,24 +41,24 @@ class Lexer(object):
 
 
 
-    def __init__(self, symbolSetCls = BaseSymbolSet):
+    def __init__(self, symbol_set_cls = BaseSymbolSet):
 
         self.t_ignore = ' \t'
-        self.t_AND = symbolSetCls.symbols['AND']
-        self.t_OR =  re.escape(symbolSetCls.symbols['OR'])
-        self.t_NOT = symbolSetCls.symbols['NOT']
-        self.t_IMPLICATION = symbolSetCls.symbols['IMPLICATION']
-        self.t_EQUALITY = symbolSetCls.symbols['EQUALITY']
-        self.t_GLOBALLY= symbolSetCls.symbols['GLOBALLY']
-        self.t_EVENTUALLY= symbolSetCls.symbols['EVENTUALLY']
-        self.t_NEXT = symbolSetCls.symbols['NEXT']
-        self.t_UNTIL = symbolSetCls.symbols['UNTIL']
-        self.t_RELEASE = symbolSetCls.symbols['RELEASE']
-        self.t_WEAK_UNTIL = symbolSetCls.symbols['WEAK_UNTIL']
+        self.t_AND = symbol_set_cls.symbols['AND']
+        self.t_OR =  re.escape(symbol_set_cls.symbols['OR'])
+        self.t_NOT = symbol_set_cls.symbols['NOT']
+        self.t_IMPLICATION = symbol_set_cls.symbols['IMPLICATION']
+        self.t_EQUALITY = symbol_set_cls.symbols['EQUALITY']
+        self.t_GLOBALLY= symbol_set_cls.symbols['GLOBALLY']
+        self.t_EVENTUALLY= symbol_set_cls.symbols['EVENTUALLY']
+        self.t_NEXT = symbol_set_cls.symbols['NEXT']
+        self.t_UNTIL = symbol_set_cls.symbols['UNTIL']
+        self.t_RELEASE = symbol_set_cls.symbols['RELEASE']
+        self.t_WEAK_UNTIL = symbol_set_cls.symbols['WEAK_UNTIL']
         self.t_LPAREN = r'\('
         self.t_RPAREN = r'\)'
-        self.t_TRUE = symbolSetCls.symbols['TRUE']
-        self.t_FALSE = symbolSetCls.symbols['FALSE']
+        self.t_TRUE = symbol_set_cls.symbols['TRUE']
+        self.t_FALSE = symbol_set_cls.symbols['FALSE']
         self.t_LITERAL = r'[a-z_][a-zA-Z0-9_]*'
 
         self.__build()
