@@ -6,8 +6,11 @@ Author: Antonio Iannopollo
 
 from cool.parser.parser import LTL_PARSER
 from cool.parser.lexer import BaseSymbolSet
+from cool.attribute import Attribute
+from cool.formula import Literal
+from cool.observer import Observer
 
-class Contract(object):
+class Contract(Observer):
     '''
     This class implements the basic concept of contract. This object is able
     to process input formulas (one for the assumptions, and one for the
@@ -19,10 +22,14 @@ class Contract(object):
     No requirement of GR1 formulas needed.
     '''
 
-    def __init__(self, input_ports, output_ports, assume_formula, guarantee_formula, symbolSetCls = BaseSymbolSet):
+    def __init__(self, base_name, input_ports, output_ports, assume_formula,
+            guarantee_formula, symbol_set_cls = BaseSymbolSet, context = None):
         '''
         Instantiate a contract.
 
+        :param base_name: a name for the contract. If the name is not unique,
+        a unique name will be provided as an Attribute
+        :type base_name: string
         :param input_ports: set of input ports associated with the contract
         :type input_ports: set or list  of strings, each of them being an
         environment-controlled literal
@@ -33,11 +40,25 @@ class Contract(object):
         :type assume_formula: string or LTLFormula object
         :param guarantee_formula: guarantee part of the contract specification
         :type guarantee_formula: string or LTLFormula object
-        :param symbolSetCls: symbol set class, used to decode furmula strings
+        :param symbol_set_cls: symbol set class, used to decode furmula strings
         and to generate string representation of LTLFormula objects
-        :type symbolSetCls: class, preferably extending
+        :type symbol_set_cls: class, preferably extending
         cool.parser.lexer.BaseSymbolSet
+        :param context: fomrula context for unique variable naming
+        :type context: object
         '''
+
+
+        self.symbol_set_cls = symbol_set_cls
+        self.context = context
+
+        #define attribute name for the contract
+        self.name_attribute = Attribute(base_name, self.context)
+
+
+        #cleanup input and output lists/sets
+        input_ports = set(input_ports)
+        output_ports = set(output_ports)
 
         #first, we need to retrieve formulas and literals from formulas
         #possibilities are that formulae will be either string or LTLFormula
@@ -47,23 +68,22 @@ class Contract(object):
         #literal in either formula is associated to the same attribute.
         #This means the context of both formulae is the current Contract obj
         try:
-            self.assume_formula = LTL_PARSER.parse(assume_formula, context = self)
+            self.assume_formula = LTL_PARSER.parse(assume_formula,
+                    context = self.context, symbol_set_cls = symbol_set_cls)
         except TypeError:
             #the formula is not a string, we assume is a LTLFormula object
             self.assume_formula = assume_formula
 
         try:
-            self.guarantee_formula = LTL_PARSER.parse(guarantee_formula, context = self)
+            self.guarantee_formula = LTL_PARSER.parse(guarantee_formula,
+                    context = self.context, symbol_set_cls = symbol_set_cls)
         except TypeError:
             self.guarantee_formula = guarantee_formula
 
-        self.input_ports = set(input_ports)
-        self.output_ports = set(output_ports)
-
         #we need to make sure there are not ports which are both input and
         #output
-        if not self.input_ports.isdisjoint(self.output_ports):
-            raise PortDeclarationError(self.input_ports & self.output_ports)
+        if not input_ports.isdisjoint(output_ports):
+            raise PortDeclarationError(input_ports & output_ports)
 
         #now we need to check that the declared input and output ports
         #match the formulae.
@@ -71,22 +91,117 @@ class Contract(object):
         #in the formulae (meaning no costraints on values), or that both
         #input and output ports are mentioned as literal in either assume
         #or guarantee formulae.
-        #What we can do, is making sure that there are not literals in 
+        #What we can do, is making sure that there are not literals in
         #assumptions and guarantees which do not match ports
 
-        current_literal_items = self.assume_formula.get_literal_items() | \
-                                self.guarantee_formula.get_literal_items()
- 
-        #get only the base_name of the literals, use the reverse zip
-        #function
-        current_literal_base_names, _ = zip(*current_literal_items)
+        current_literal_items_dict = dict( \
+                                self.assume_formula.get_literal_items() | \
+                                self.guarantee_formula.get_literal_items() )
 
-        contract_ports = self.input_ports | self.output_ports
+        contract_ports = input_ports | output_ports
 
-        for literal in current_literal_base_names:
-            if literal not in contract_ports:
-                raise PortMappingError(literal)
+        if not current_literal_items_dict.viewkeys() <= contract_ports:
+            raise PortMappingError( \
+                    current_literal_items_dict.viewkeys() - contract_ports)
 
+        #the contract has to mantain a detailed list of ports.
+        #It means that it needs to be an observer of literals in formulae
+        #and it needs to create new attributes for ports which are not mentioned
+        #in formulae
+
+        #create two dictionaries for contract ports
+        self.input_ports_dict = {}
+        self.output_ports_dict = {}
+
+        #process input ports
+        for literal_name in input_ports:
+            if literal_name in current_literal_items_dict.viewkeys():
+                self.input_ports_dict[literal_name] = \
+                        current_literal_items_dict[literal_name]
+            else:
+                self.input_ports_dict[literal_name] = \
+                        Literal(literal_name, self.context)
+
+            #observer pattern - attach to the subject
+            self.input_ports_dict[literal_name].attach(self)
+
+        #process output ports
+        for literal_name in output_ports:
+            if literal_name in current_literal_items_dict.viewkeys():
+                self.output_ports_dict[literal_name] = \
+                        current_literal_items_dict[literal_name]
+            else:
+                self.output_ports_dict[literal_name] = \
+                        Literal(literal_name, self.context)
+
+            #observer pattern - attach to the subject
+            self.output_ports_dict[literal_name].attach(self)
+
+
+
+#    def __str__(self):
+#        '''
+#        Defining print representation for a contract
+#        '''
+#       description = 'Contract %s (%s)'
+#
+#       for
+
+    def update(self, updated_subject):
+        '''
+        Implementation of the update method from a attribute according to
+        the observer pattern
+        '''
+
+        updated_literal = updated_subject.get_state()
+        updated_name = updated_literal.base_name
+
+        if updated_name not in self.port_names:
+            raise KeyError('attribute not in literals dict for the furmula')
+
+        #attach to the new literal
+        updated_literal.attach(self)
+
+        #detach from the current literal 
+        self.ports_dict[ updated_name  ].detach()
+
+        #update the literals list
+        port_dict = self.port_lookup(updated_name)
+        port_dict[ updated_name] = updated_literal
+
+
+    def port_lookup(self, literal_name):
+        '''
+        Given a literal name, returns the dictionary (either input or output)
+        in which it is defined
+        '''
+
+        if literal_name in self.input_ports_dict.viewkeys():
+            port_dict =  self.input_ports_dict
+        elif literal_name in self.output_ports_dict.viewkeys():
+            port_dict = self.output_ports_dict
+        else:
+            raise KeyError('port not defined for literal %s' % literal_name)
+
+    def getport_names(self):
+        '''
+        get method of property port_names.
+        Returns an updated set of port names
+        '''
+        return self.input_ports_dict.viewkeys() | self.output_ports_dict.viewkeys()
+
+    port_names = property(fget = getport_names, doc = 'set of contract port names')
+
+    def getports_dict(self):
+        '''
+        Get method of property ports_dict.
+        Return an update dict of all the contract ports
+        '''
+        return dict( self.input_ports_dict.items() + \
+                        self.output_ports_dict.items() )
+
+    ports_dict = property(fget = getports_dict, doc = 'a single dictionary \
+                    containing both input and output ports')
 
 class PortDeclarationError(Exception):
     '''
