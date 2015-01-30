@@ -60,3 +60,19 @@ def test_wrong_mapping(wrong_mapping):
     '''
     with pytest.raises(PortMappingError):
         contract = Contract('C', wrong_mapping[0], wrong_mapping[1], wrong_mapping[2], wrong_mapping[3])
+
+
+
+def test_print(basic_params):
+    '''
+    Test print function of two identical contracts
+    '''
+    contract = Contract('C', basic_params[0], basic_params[1], basic_params[2], basic_params[3])
+    print contract
+
+    contract2 = Contract('C', basic_params[0], basic_params[1], basic_params[2], basic_params[3])
+    print contract2
+    assert True
+
+
+
