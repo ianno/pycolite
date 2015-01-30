@@ -34,9 +34,10 @@ class UniqueIdExtractor(object):
 
         obj_id = id(registering_obj)
 
-        if (not self.__dictionary.has_key(obj_id)) or reset:
+        if (obj_id not in self.__dictionary) or reset:
             self.__dictionary[obj_id] = self.__index
-            self.__index = self.__index + 1
+        else:
+            self.__dictionary[obj_id] +=  1
 
         return self.__dictionary[obj_id]
 
@@ -63,10 +64,12 @@ class AttributeNamePool(object):
         :type base_name: string
         '''
 
-        if not cls.__dictionary.has_key(base_name):
+        try:
+            number_extractor = cls.__dictionary[base_name]
+        except KeyError:
             cls.__dictionary[base_name] = UniqueIdExtractor()
+            number_extractor = cls.__dictionary[base_name]
 
-        number_extractor = cls.__dictionary[base_name]
 
         obj_number = number_extractor.get_id(registering_obj, reset)
 

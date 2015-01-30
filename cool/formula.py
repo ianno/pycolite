@@ -47,8 +47,14 @@ class LTLFormula(Observer):
     '''
 
     Symbol = None
-    literals = {}
+
     is_literal = False
+
+    def __init__(self):
+        '''
+        LTLFormula constructor
+        '''
+        self.literals = {}
 
     def generate(self, symbol_set = None):
         '''
@@ -94,11 +100,29 @@ class LTLFormula(Observer):
         add a new literal to the internal dict if it is the case
         '''
         if literal_candidate.is_literal:
-            if literal_candidate.base_name in self.literals:
-                literal_candidate.merge( self.literals[ literal_candidate.base_name ] )
+
+            formula_literal_dict = dict(self.get_literal_items())
+
+            #if the literal is already in the formula tree, we merge the 
+            #literal with the one is already there
+            if literal_candidate.base_name in formula_literal_dict:
+
+                literal_candidate.merge( \
+                        formula_literal_dict[ literal_candidate.base_name ] )
+
+                formula_literal_dict[literal_candidate.base_name].attach(self)
+
+                self.literals[ literal_candidate.base_name  ] = \
+                        formula_literal_dict[ literal_candidate.base_name  ]
+
+                literal_candidate = \
+                        formula_literal_dict[ literal_candidate.base_name  ]
+
             else:
                 literal_candidate.attach(self)
                 self.literals[literal_candidate.base_name] = literal_candidate
+
+        return literal_candidate
 
 
 class Literal(Attribute, LTLFormula):
@@ -118,6 +142,7 @@ class Literal(Attribute, LTLFormula):
         generation
         :type context: object
         '''
+        LTLFormula.__init__(self)
         Attribute.__init__(self, base_name, context)
 
     def generate(self, symbol_set = None):
@@ -162,9 +187,16 @@ class BinaryFormula(LTLFormula):
         self.right_formula = right_formula
 
         #register as an observer to immediate descendent literals
-        for literal_candidate in (left_formula, right_formula):
-            self.process_literal(literal_candidate)
+        self.left_formula = self.process_literal(self.left_formula)
+        self.right_formula = self.process_literal(self.right_formula)
 
+    def get_literal_items(self):
+        '''
+        Returns all literals looking recursively in all the formula
+        object structure
+        '''
+        return self.literals.viewitems() | self.left_formula.get_literal_items() \
+                | self.right_formula.get_literal_items()
 
     def generate(self, symbol_set = None):
         '''
@@ -223,7 +255,16 @@ class UnaryFormula(LTLFormula):
         self.right_formula = formula
 
         #process possible new literal
-        self.process_literal(formula)
+        self.right_formula = self.process_literal(self.right_formula)
+
+    def get_literal_items(self):
+        '''
+        Returns all literals looking recursively in all the formula
+        object structure
+        '''
+
+        return self.literals.viewitems() | self.right_formula.get_literal_items()
+
 
 
     def generate(self, symbol_set = None):

@@ -91,6 +91,7 @@ class Parser(object):
 
     def parse(self, string, context = None, symbol_set_cls = lexer.BaseSymbolSet, **kwargs):
         ''' s '''
+
         self.lexer = lexer.Lexer(symbol_set_cls)
         self.context = context
 
