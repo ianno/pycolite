@@ -4,7 +4,7 @@ Basic implementation of contract
 Author: Antonio Iannopollo
 '''
 
-from cool.parser.parser import LTL_PARSER
+from cool.parser.parser import Parser
 from cool.parser.lexer import BaseSymbolSet
 from cool.attribute import Attribute
 from cool.formula import Literal
@@ -48,6 +48,7 @@ class Contract(Observer):
         :type context: object
         '''
 
+        self.parser = Parser()
 
         self.symbol_set_cls = symbol_set_cls
         self.context = context
@@ -68,14 +69,14 @@ class Contract(Observer):
         #literal in either formula is associated to the same attribute.
         #This means the context of both formulae is the current Contract obj
         try:
-            self.assume_formula = LTL_PARSER.parse(assume_formula,
+            self.assume_formula = self.parser.parse(assume_formula,
                     context = self.context, symbol_set_cls = symbol_set_cls)
         except TypeError:
             #the formula is not a string, we assume is a LTLFormula object
             self.assume_formula = assume_formula
 
         try:
-            self.guarantee_formula = LTL_PARSER.parse(guarantee_formula,
+            self.guarantee_formula = self.parser.parse(guarantee_formula,
                     context = self.context, symbol_set_cls = symbol_set_cls)
         except TypeError:
             self.guarantee_formula = guarantee_formula
@@ -109,43 +110,55 @@ class Contract(Observer):
         #and it needs to create new attributes for ports which are not mentioned
         #in formulae
 
-        #create two dictionaries for contract ports
-        self.input_ports_dict = {}
-        self.output_ports_dict = {}
+        #create two dictionaries for contract ports, and initialize to None
+        self.input_ports_dict = {key : None for key in input_ports}
+        self.output_ports_dict = {key: None for key in output_ports}
 
-        #process input ports
-        for literal_name in input_ports:
-            if literal_name in current_literal_items_dict.viewkeys():
-                self.input_ports_dict[literal_name] = \
+        #process input and outport ports
+        for literal_name in input_ports | output_ports:
+            #port lookup looks for the correct dictionary
+            port_dict = self.port_lookup(literal_name)
+
+            if literal_name in current_literal_items_dict:
+                port_dict[literal_name] = \
                         current_literal_items_dict[literal_name]
             else:
-                self.input_ports_dict[literal_name] = \
+                port_dict[literal_name] = \
                         Literal(literal_name, self.context)
 
             #observer pattern - attach to the subject
-            self.input_ports_dict[literal_name].attach(self)
+            port_dict[literal_name].attach(self)
 
-        #process output ports
-        for literal_name in output_ports:
-            if literal_name in current_literal_items_dict.viewkeys():
-                self.output_ports_dict[literal_name] = \
-                        current_literal_items_dict[literal_name]
-            else:
-                self.output_ports_dict[literal_name] = \
-                        Literal(literal_name, self.context)
+    def __str__(self):
+        '''
+        Defining print representation for a contract
+        '''
+        description = []
+        description.append('Contract %s ( %s )\n' % \
+            ( self.name_attribute.unique_name, self.name_attribute.base_name ) )
 
-            #observer pattern - attach to the subject
-            self.output_ports_dict[literal_name].attach(self)
+        description.append('\tInput ports:\n')
 
+        for base_name, port in self.input_ports_dict.items():
 
+            description.append('\t\t%s ( %s )\n' % \
+                    (port.unique_name, base_name ) )
 
-#    def __str__(self):
-#        '''
-#        Defining print representation for a contract
-#        '''
-#       description = 'Contract %s (%s)'
-#
-#       for
+        description.append('\tOutput ports:\n')
+
+        for base_name, port in self.output_ports_dict.items():
+            description.append('\t\t%s ( %s )\n' % \
+                    (port.unique_name, base_name ) )
+
+        description.append('\tAssumption\n')
+        description.append('\t\t%s\n' % \
+                self.assume_formula.generate(self.symbol_set_cls))
+
+        description.append('\tGuarantee\n')
+        description.append('\t\t%s\n' % \
+                self.guarantee_formula.generate(self.symbol_set_cls))
+
+        return ''.join(description)
 
     def update(self, updated_subject):
         '''
@@ -162,8 +175,8 @@ class Contract(Observer):
         #attach to the new literal
         updated_literal.attach(self)
 
-        #detach from the current literal 
-        self.ports_dict[ updated_name  ].detach()
+        #detach from the current literal
+        self.ports_dict[ updated_name ].detach()
 
         #update the literals list
         port_dict = self.port_lookup(updated_name)
@@ -182,6 +195,8 @@ class Contract(Observer):
             port_dict = self.output_ports_dict
         else:
             raise KeyError('port not defined for literal %s' % literal_name)
+
+        return port_dict
 
     def getport_names(self):
         '''
