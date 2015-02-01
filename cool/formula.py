@@ -80,7 +80,7 @@ class LTLFormula(Observer):
         updated_attribute.attach(self)
 
         #detach from the current attribute
-        self.literals[ updated_attribute.base_name  ].detach()
+        self.literals[ updated_attribute.base_name  ].detach(self)
 
         #update the literals list
         self.literals[updated_attribute.base_name] = updated_attribute
@@ -93,36 +93,6 @@ class LTLFormula(Observer):
         '''
 
         return self.literals.viewitems()
-
-
-    def process_literal(self, literal_candidate):
-        '''
-        add a new literal to the internal dict if it is the case
-        '''
-        if literal_candidate.is_literal:
-
-            formula_literal_dict = dict(self.get_literal_items())
-
-            #if the literal is already in the formula tree, we merge the 
-            #literal with the one is already there
-            if literal_candidate.base_name in formula_literal_dict:
-
-                literal_candidate.merge( \
-                        formula_literal_dict[ literal_candidate.base_name ] )
-
-                formula_literal_dict[literal_candidate.base_name].attach(self)
-
-                self.literals[ literal_candidate.base_name  ] = \
-                        formula_literal_dict[ literal_candidate.base_name  ]
-
-                literal_candidate = \
-                        formula_literal_dict[ literal_candidate.base_name  ]
-
-            else:
-                literal_candidate.attach(self)
-                self.literals[literal_candidate.base_name] = literal_candidate
-
-        return literal_candidate
 
 
 class Literal(Attribute, LTLFormula):
@@ -186,9 +156,31 @@ class BinaryFormula(LTLFormula):
         self.left_formula = left_formula
         self.right_formula = right_formula
 
-        #register as an observer to immediate descendent literals
-        self.left_formula = self.process_literal(self.left_formula)
-        self.right_formula = self.process_literal(self.right_formula)
+        self.process_literals()
+
+    def update(self, updated_subject):
+        '''
+        override of the update method from LTLFormula.
+        We need to propagate an update also to left or right formulae
+        '''
+
+        #security check. Here if right_formula and right_formula have the same
+        #base name, they should be the same object
+        assert (self.left_formula.base_name != self.right_formula.base_name) \
+                or (self.left_formula == self.right_formula)
+
+        if updated_subject == self.left_formula:
+
+            #security check. updated subject shouldn't be also equal to
+            #right_formula
+            assert updated_subject != self.right_formula
+
+            self.left_formula = updated_subject.get_state()
+        elif updated_subject == self.right_formula:
+            self.right_formula = updated_subject.get_state()
+
+        #call superclass update
+        LTLFormula.update(self, updated_subject)
 
     def get_literal_items(self):
         '''
@@ -197,6 +189,61 @@ class BinaryFormula(LTLFormula):
         '''
         return self.literals.viewitems() | self.left_formula.get_literal_items() \
                 | self.right_formula.get_literal_items()
+
+
+    def get_conflicting_literals(self):
+        '''
+        Returns a list of tuples containing all the literals which have the
+        same base name but are different object whithin the formula.
+        '''
+
+        conflict_list = []
+        left_side_literals = dict(self.left_formula.get_literal_items())
+        right_side_literals = dict(self.right_formula.get_literal_items())
+
+        for key in (left_side_literals.viewkeys() & right_side_literals.viewkeys()):
+
+            conflict_list.append( (left_side_literals[key], right_side_literals[key]) )
+
+        return conflict_list
+
+
+    def process_literals(self):
+        '''
+        add a new literal to the internal dict if it is the case and process
+        literals in left and right sides of the formula
+        '''
+
+        #check for immediate conflict. If so, discard a literal
+        if self.left_formula.is_literal and self.right_formula.is_literal and \
+                self.left_formula.base_name == self.right_formula.base_name:
+
+            self.right_formula = self.right_formula
+
+            self.left_formula.attach(self)
+            self.literals[self.left_formula.base_name] = self.left_formula
+
+        else:
+            #if either side is a literal, add it to the internal list
+            if self.left_formula.is_literal:
+
+                self.left_formula.attach(self)
+                self.literals[self.left_formula.base_name] = self.left_formula
+
+            if self.right_formula.is_literal:
+
+                self.right_formula.attach(self)
+                self.literals[self.right_formula.base_name] = self.right_formula
+
+        #get the list of conflicting literals
+        conflicts = self.get_conflicting_literals()
+
+        #process them
+        for (left_literal, right_literal) in conflicts:
+
+            #policy to make the left_literal to be chosen over the other
+            right_literal.merge( left_literal )
+
 
     def generate(self, symbol_set = None):
         '''
@@ -254,8 +301,10 @@ class UnaryFormula(LTLFormula):
         LTLFormula.__init__(self)
         self.right_formula = formula
 
-        #process possible new literal
-        self.right_formula = self.process_literal(self.right_formula)
+        #process literal, if any:
+        if self.right_formula.is_literal:
+            self.right_formula.attach(self)
+            self.literals[self.right_formula.base_name] = self.right_formula
 
     def get_literal_items(self):
         '''
@@ -264,6 +313,22 @@ class UnaryFormula(LTLFormula):
         '''
 
         return self.literals.viewitems() | self.right_formula.get_literal_items()
+
+
+    def update(self, updated_subject):
+        '''
+        override of the update method from LTLFormula.
+        We need to propagate an update also to left or right formulae
+        '''
+
+        #if we receive an update for a literal we don't are
+        #linked to, that's an error
+        assert updated_subject == self.right_formula
+
+        self.right_formula = updated_subject.get_state()
+
+        #call superclass update
+        LTLFormula.update(self, updated_subject)
 
 
 
