@@ -5,7 +5,6 @@ Author: Antonio Iannopollo
 '''
 from abc import ABCMeta, abstractmethod
 
-
 class Subject:
     '''
     Define a subject
@@ -30,7 +29,12 @@ class Subject:
 
     def notify(self):
         '''Notify observers that something changed'''
-        for observer in self.observers:
+
+        #this version of the observer is not thread safe, however it may
+        #happen that the observer list changes size while iterating
+        #then, we need a copy
+
+        for observer in self.observers.copy():
             observer.update(self)
 
     @abstractmethod
