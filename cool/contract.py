@@ -128,6 +128,34 @@ class Contract(Observer):
 
             #observer pattern - attach to the subject
             port_dict[literal_name].attach(self)
+        
+    def compose(self, other_contract, connection_list = []):
+        '''
+        Compose the current contract with the one passed as a parameter.
+        The operations to be done are: 
+        
+        :param other_contract: contract to be used for composition
+        :type other_contract: Contract
+        :param connection_list: optional list of pairs of base_names specifying the ports to be connected
+        :type connection_list: list of tuples (pairs)
+        '''
+
+    def connect_to_port(self, port_name, other_contract, other_port_name):
+        '''
+        Connect a port of the current contract with a port of another contract.
+        The only constraint is that we cannot connect two output ports.
+        
+        :param port_name: base name of the current contract port
+        :type port_name: string
+        :param other_contract: contract to be connected to
+        :type other_contract: Contract object
+        :param other_port_name: name of the port to be connected to
+        :type other_port_name: string
+        '''
+        
+        assert 
+        
+        
 
     def __str__(self):
         '''
@@ -229,3 +257,16 @@ class PortMappingError(Exception):
     Raised if a formula uses an undeclared port
     '''
     pass
+
+class PortNotFoundError(Exception):
+    '''
+    Raised if a port name is not found
+    '''
+    pass
+
+class PortConnectionError(Exception):
+    '''
+    Raised in case of attemp of connecting two output ports
+    '''
+    
+    
