@@ -148,15 +148,23 @@ class BinaryFormula(LTLFormula):
     '''
 
 
-    def __init__(self, left_formula, right_formula):
+    def __init__(self, left_formula, right_formula, merge_literals = True):
         '''
         doc
+
+        If merge_literals is false, the method will not merge conflicting
+        literals.
+
+        :param merge_literals: indicates wheter literals with the same
+            base_name will be merged
+        :type merge_literals: bool
         '''
+
         LTLFormula.__init__(self)
         self.left_formula = left_formula
         self.right_formula = right_formula
 
-        self.process_literals()
+        self.process_literals(merge_literals)
 
     def update(self, updated_subject):
         '''
@@ -208,41 +216,62 @@ class BinaryFormula(LTLFormula):
         return conflict_list
 
 
-    def process_literals(self):
+    def process_literals(self, merge_literals = True):
         '''
         add a new literal to the internal dict if it is the case and process
         literals in left and right sides of the formula
+        If merge_literals is false, the method will not merge conflicting
+        literals.
+
+        :param merge_literals: indicates wheter literals with the same
+            base_name will be merged
+        :type merge_literals: bool
         '''
 
-        #check for immediate conflict. If so, discard a literal
-        if self.left_formula.is_literal and self.right_formula.is_literal and \
-                self.left_formula.base_name == self.right_formula.base_name:
+        if merge_literals:
+            #check for immediate conflict. If so, discard a literal
+            if self.left_formula.is_literal and self.right_formula.is_literal and \
+                    self.left_formula.base_name == self.right_formula.base_name:
 
-            self.right_formula = self.right_formula
-
-            self.left_formula.attach(self)
-            self.literals[self.left_formula.base_name] = self.left_formula
-
-        else:
-            #if either side is a literal, add it to the internal list
-            if self.left_formula.is_literal:
+                self.right_formula = self.right_formula
 
                 self.left_formula.attach(self)
                 self.literals[self.left_formula.base_name] = self.left_formula
 
-            if self.right_formula.is_literal:
+            else:
+                #if either side is a literal, add it to the internal list
+                if self.left_formula.is_literal:
 
-                self.right_formula.attach(self)
-                self.literals[self.right_formula.base_name] = self.right_formula
+                    self.left_formula.attach(self)
+                    self.literals[self.left_formula.base_name] = self.left_formula
 
-        #get the list of conflicting literals
-        conflicts = self.get_conflicting_literals()
+                if self.right_formula.is_literal:
 
-        #process them
-        for (left_literal, right_literal) in conflicts:
+                    self.right_formula.attach(self)
+                    self.literals[self.right_formula.base_name] = self.right_formula
 
-            #policy to make the left_literal to be chosen over the other
-            right_literal.merge( left_literal )
+            #get the list of conflicting literals
+            conflicts = self.get_conflicting_literals()
+
+            #process them
+            for (left_literal, right_literal) in conflicts:
+
+                #policy to make the left_literal to be chosen over the other
+                right_literal.merge( left_literal )
+
+        #if we do not want to merge literals, we just need to attach to the
+        #new literas
+        else:
+            #if either side is a literal, add it to the internal list
+                if self.left_formula.is_literal:
+
+                    self.left_formula.attach(self)
+                    self.literals[self.left_formula.base_name] = self.left_formula
+
+                if self.right_formula.is_literal:
+
+                    self.right_formula.attach(self)
+                    self.literals[self.right_formula.base_name] = self.right_formula
 
 
     def generate(self, symbol_set = None):
