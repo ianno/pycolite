@@ -7,7 +7,7 @@ Author: Antonio Iannopollo
 from cool.parser.parser import Parser
 from cool.parser.lexer import BaseSymbolSet
 from cool.attribute import Attribute
-from cool.formula import Literal
+from cool.formula import Literal, Conjunction, Disjunction, Negation
 from cool.observer import Observer
 
 
@@ -130,7 +130,7 @@ class Contract(Observer):
             #observer pattern - attach to the subject
             port_dict[literal_name].attach(self)
 
-    def compose(self, other_contract, connection_list = None):
+    def compose(self, other_contract, new_name = None, connection_list = None):
         '''
         Compose the current contract with the one passed as a parameter.
         The operations to be done are: merge the literals, and merge the
@@ -148,11 +148,31 @@ class Contract(Observer):
 
         if connection_list is None:
             connection_list = []
+        if new_name is None:
+            new_name = '%s (x) %s' % (self.name_attribute.base_name, \
+                    other_contract.name_attribute.base_name)
 
         for (port, other_port) in connection_list:
             self.connect_to_port(port, other_contract, other_port)
 
-        #self.assume_formula = 
+        and_of_assumptions = Conjunction(self.assume_formula, \
+                other_contract.assume_formula, merge_literals = False)
+
+        new_guarantees = Conjunction(self.guarantee_formula, \
+                other_contract.guarantee_formula, merge_literals = False)
+
+        neg_guarantees = Negation(new_guarantees)
+
+        new_assumptions = Disjunction(and_of_assumptions, neg_guarantees, \
+                merge_literals = False)
+
+        new_inputs = self.input_ports_dict.viewkeys() + \
+                other_contract.input_ports_dict.viewkeys()
+        new_outputs = self.output_ports_dict.viewkeys() + \
+                other_contract.output_ports_dict.viewkeys()
+
+        return Contract(new_name, new_inputs, new_outputs, new_assumptions, \
+                new_guarantees, self.symbol_set_cls, self.context)
 
     def connect_to_port(self, port_name, other_contract, other_port_name):
         '''
