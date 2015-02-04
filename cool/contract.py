@@ -10,6 +10,7 @@ from cool.attribute import Attribute
 from cool.formula import Literal
 from cool.observer import Observer
 
+
 class Contract(Observer):
     '''
     This class implements the basic concept of contract. This object is able
@@ -128,23 +129,36 @@ class Contract(Observer):
 
             #observer pattern - attach to the subject
             port_dict[literal_name].attach(self)
-        
-    def compose(self, other_contract, connection_list = []):
+
+    def compose(self, other_contract, connection_list = None):
         '''
         Compose the current contract with the one passed as a parameter.
-        The operations to be done are: 
-        
+        The operations to be done are: merge the literals, and merge the
+        formulae.
+        Given a contract C = (A, G) and a contract C1 = (A1, G1), the
+        composition of the two will be a contract
+        C2 = ((A & A1) | !(G & G1) , G & G1)
+
         :param other_contract: contract to be used for composition
         :type other_contract: Contract
-        :param connection_list: optional list of pairs of base_names specifying the ports to be connected
+        :param connection_list: optional list of pairs of base_names specifying
+            the ports to be connected
         :type connection_list: list of tuples (pairs)
         '''
+
+        if connection_list is None:
+            connection_list = []
+
+        for (port, other_port) in connection_list:
+            self.connect_to_port(port, other_contract, other_port)
+
+        #self.assume_formula = 
 
     def connect_to_port(self, port_name, other_contract, other_port_name):
         '''
         Connect a port of the current contract with a port of another contract.
         The only constraint is that we cannot connect two output ports.
-        
+
         :param port_name: base name of the current contract port
         :type port_name: string
         :param other_contract: contract to be connected to
@@ -152,10 +166,15 @@ class Contract(Observer):
         :param other_port_name: name of the port to be connected to
         :type other_port_name: string
         '''
-        
-        assert 
-        
-        
+
+        if ( port_name in self.output_ports_dict ) and \
+                ( other_port_name in other_contract.output_ports_dict ):
+            raise PortConnectionError('Cannot connect two output ports')
+
+
+        self.ports_dict[port_name].merge( \
+                other_contract.ports_dict[other_port_name] )
+
 
     def __str__(self):
         '''
@@ -268,5 +287,3 @@ class PortConnectionError(Exception):
     '''
     Raised in case of attemp of connecting two output ports
     '''
-    
-    
