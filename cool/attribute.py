@@ -76,7 +76,7 @@ class AttributeNamePool(object):
         if base_name != '' and obj_number == -1:
             return base_name
 
-        return '%s%d' % (base_name, obj_number)
+        return '%s_%d' % (base_name, obj_number)
 
 
 class Attribute(Subject):
