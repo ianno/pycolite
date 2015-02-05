@@ -73,16 +73,19 @@ class LTLFormula(Observer):
 
         updated_attribute = updated_subject.get_state()
 
-        if updated_attribute.base_name not in self.literals:
-            raise KeyError('attribute not in literals dict for the furmula')
+        #if updated_attribute.base_name not in self.literals:
+        #    raise KeyError('attribute not in literals dict for the formula')
 
         #attach to the new attribute
         updated_attribute.attach(self)
 
         #detach from the current attribute
-        self.literals[ updated_attribute.base_name  ].detach(self)
+        self.literals[ updated_subject.base_name  ].detach(self)
 
         #update the literals list
+        if updated_attribute.base_name not in self.literals:
+            del self.literals[updated_subject.base_name]
+
         self.literals[updated_attribute.base_name] = updated_attribute
 
 
@@ -263,15 +266,15 @@ class BinaryFormula(LTLFormula):
         #new literas
         else:
             #if either side is a literal, add it to the internal list
-                if self.left_formula.is_literal:
+            if self.left_formula.is_literal:
 
-                    self.left_formula.attach(self)
-                    self.literals[self.left_formula.base_name] = self.left_formula
+                self.left_formula.attach(self)
+                self.literals[self.left_formula.base_name] = self.left_formula
 
-                if self.right_formula.is_literal:
+            if self.right_formula.is_literal:
 
-                    self.right_formula.attach(self)
-                    self.literals[self.right_formula.base_name] = self.right_formula
+                self.right_formula.attach(self)
+                self.literals[self.right_formula.base_name] = self.right_formula
 
 
     def generate(self, symbol_set = None):
