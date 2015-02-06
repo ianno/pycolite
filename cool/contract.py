@@ -148,14 +148,6 @@ class Contract(object):
         except TypeError:
             self.guarantee_formula = guarantee_formula
 
-        #now we need to equilized the alphabets of the two formulas
-        print 'h'
-        print self.assume_formula.generate()
-        print self.guarantee_formula.generate()
-        self.assume_formula.equalize_literals_with(self.guarantee_formula)
-        print 'll'
-        print self.assume_formula.generate()
-        print self.guarantee_formula.generate()
 
         #the contract has to mantain a detailed list of ports.
         #It means that it needs to be an observer of literals in formulae
@@ -171,8 +163,6 @@ class Contract(object):
         except AttributeError:
             input_ports = set(input_ports)
             self.input_ports_dict = {key : None for key in input_ports}
-        print 'here'
-        print input_ports
         #and outputs
         try:
             self.output_ports_dict = \
@@ -225,11 +215,16 @@ class Contract(object):
         #assumptions and guarantees which do not match ports
 
 
-        if not set(self.formulae_reverse_dict.viewkeys()) <= \
-                                        set(self.reverse_ports_dict.viewkeys()):
-            raise PortMappingError( \
-                    self.formulae_reverse_dict.viewkeys() - \
-                                    self.reverse_ports_dict.viewkeys())
+        #sometimes some literals in formulae do not have a match
+        #we can try to match them with known ports based on their base_name
+        for key in self.formulae_reverse_dict.viewkeys() - \
+                self.reverse_ports_dict.viewkeys():
+
+            literal = self.formulae_reverse_dict[key]
+            try:
+                literal.merge(self.ports_dict[literal.base_name].literal)
+            except KeyError:
+                raise PortMappingError( key )
 
 
 
@@ -315,9 +310,6 @@ class Contract(object):
         new_assumptions = Disjunction(and_of_assumptions, neg_guarantees, \
                 merge_literals = False)
 
-        print 'before'
-        print new_inputs
-        print connection_list
         return Contract(new_name, new_inputs, new_outputs, new_assumptions, \
                 new_guarantees, self.symbol_set_cls, self.context)
 
@@ -474,10 +466,14 @@ class Contract(object):
         return a dict of lterals used in contract formulae, indexed by
         unique_name
         '''
+        #use the formulae instead of the dict because the dicts
+        #overrides duplicates
+        _, values = zip(* (self.assume_formula.get_literal_items() | \
+                            self.guarantee_formula.get_literal_items()))
+
         return {key: value for (key, value) in zip( \
-                [literal.unique_name \
-                    for literal in self.formulae_dict.viewvalues()], \
-                self.formulae_dict.viewvalues())}
+                [literal.unique_name for literal in values], \
+                    values)}
 
 
 

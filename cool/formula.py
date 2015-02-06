@@ -191,7 +191,8 @@ class BinaryFormula(LTLFormula):
 
         #security check. Here if right_formula and right_formula have the same
         #base name, they should be the same object
-        assert (self.left_formula.base_name != self.right_formula.base_name) \
+        assert (not (self.left_formula.is_literal and self.right_formula.is_literal)) \
+                or (self.left_formula.base_name != self.right_formula.base_name) \
                 or (self.left_formula == self.right_formula)
 
         if updated_subject == self.left_formula:
