@@ -147,29 +147,16 @@ class Contract(object):
                     context = self.context, symbol_set_cls = symbol_set_cls)
         except TypeError:
             self.guarantee_formula = guarantee_formula
-        '''
-        #we need to make sure there are not ports which are both input and
-        #output
-        if not input_ports.isdisjoint(output_ports):
-            raise PortDeclarationError(input_ports & output_ports)
 
+        #now we need to equilized the alphabets of the two formulas
+        print 'h'
+        print self.assume_formula.generate()
+        print self.guarantee_formula.generate()
+        self.assume_formula.equalize_literals_with(self.guarantee_formula)
+        print 'll'
+        print self.assume_formula.generate()
+        print self.guarantee_formula.generate()
 
-        #now we need to check that the declared input and output ports
-        #match the formulae.
-        #It is possible, however, that some ports are not mentioned at all
-        #in the formulae (meaning no costraints on values), or that both
-        #input and output ports are mentioned as literal in either assume
-        #or guarantee formulae.
-        #What we can do, is making sure that there are not literals in
-        #assumptions and guarantees which do not match ports
-
-
-        if not self.formulae_reverse_dict.viewkeys() <= \
-                                        self.reverse_port_dict.viewkeys():
-            raise PortMappingError( \
-                    self.formulae_reverse_dict.viewkeys() - \
-                                    self.reverse_port_dict.viewkeys())
-        '''
         #the contract has to mantain a detailed list of ports.
         #It means that it needs to be an observer of literals in formulae
         #and it needs to create new attributes for ports which are not mentioned
@@ -184,7 +171,8 @@ class Contract(object):
         except AttributeError:
             input_ports = set(input_ports)
             self.input_ports_dict = {key : None for key in input_ports}
-
+        print 'here'
+        print input_ports
         #and outputs
         try:
             self.output_ports_dict = \
@@ -327,7 +315,9 @@ class Contract(object):
         new_assumptions = Disjunction(and_of_assumptions, neg_guarantees, \
                 merge_literals = False)
 
-
+        print 'before'
+        print new_inputs
+        print connection_list
         return Contract(new_name, new_inputs, new_outputs, new_assumptions, \
                 new_guarantees, self.symbol_set_cls, self.context)
 
