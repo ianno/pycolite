@@ -268,8 +268,53 @@ class Contract(object):
             new_name = '%s (x) %s' % (self.name_attribute.base_name, \
                     other_contract.name_attribute.base_name)
 
-        for (port, other_port) in connection_list:
-            self.connect_to_port(port, other_contract, other_port)
+        #in case of composition, we need to infer the composition contract
+        #ports
+        #we populate the new port list with all the oprts from the composed
+        #contracts, naming them merging the source contract and the port
+        new_inputs = {'%s_%s' % \
+            (self.name_attribute.unique_name, base_name): port \
+            for (base_name, port) in self.input_ports_dict.items()}
+        #update with the other_contract ports
+        new_inputs.update({'%s_%s' % \
+            (other_contract.name_attribute.unique_name, base_name): port \
+            for (base_name, port) in other_contract.input_ports_dict.items()})
+
+        #and outputs
+        new_outputs = {'%s_%s' % \
+            (self.name_attribute.unique_name, base_name): port \
+            for (base_name, port) in self.output_ports_dict.items()}
+        #update with the other_contract ports
+        new_outputs.update({'%s_%s' % \
+            (other_contract.name_attribute.unique_name, base_name): port \
+            for (base_name, port) in other_contract.output_ports_dict.items()})
+
+
+        for (port_name, other_port_name) in connection_list:
+            self.connect_to_port(port_name, other_contract, other_port_name)
+            #process ports
+            #input/input, we need to remove one input in the new contract
+            if (port_name in self.input_ports_dict) and \
+                    (other_port_name in other_contract.input_ports_dict):
+                del new_inputs['%s_%s' % \
+                    (other_contract.name_attribute.unique_name, \
+                        other_port_name)]
+            #input/output becomes a output
+            if (port_name in self.input_ports_dict) and \
+                    (other_port_name in other_contract.output_ports_dict):
+                del new_inputs['%s_%s' % \
+                    (self.name_attribute.unique_name, port_name)]
+            #output/input
+            if (port_name in self.output_ports_dict) and \
+                    (other_port_name in other_contract.input_ports_dict):
+                del new_inputs['%s_%s' % \
+                    (other_contract.name_attribute.unique_name, \
+                        other_port_name)]
+            #output/output
+            #exception managed in connection_to_port
+            assert not ( (port_name in self.output_ports_dict) and \
+                    (other_port_name in other_contract.output_ports_dict) )
+
 
         and_of_assumptions = Conjunction(self.assume_formula, \
                 other_contract.assume_formula, merge_literals = False)
@@ -282,10 +327,6 @@ class Contract(object):
         new_assumptions = Disjunction(and_of_assumptions, neg_guarantees, \
                 merge_literals = False)
 
-        new_inputs = self.input_ports_dict.viewkeys() | \
-                other_contract.input_ports_dict.viewkeys()
-        new_outputs = self.output_ports_dict.viewkeys() | \
-                other_contract.output_ports_dict.viewkeys()
 
         return Contract(new_name, new_inputs, new_outputs, new_assumptions, \
                 new_guarantees, self.symbol_set_cls, self.context)
