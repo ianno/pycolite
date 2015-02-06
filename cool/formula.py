@@ -88,6 +88,20 @@ class LTLFormula(Observer):
 
         self.literals[updated_attribute.base_name] = updated_attribute
 
+    def equalize_literals_with(self, formula):
+        '''
+        Merges all the common literals with another formula
+
+        :param formula: other formula
+        :type formula: LTLFormula
+        '''
+
+        other_literals = dict(formula.get_literal_items())
+
+        for name, literal in self.get_literal_items():
+            if name in other_literals:
+                literal.merge(other_literals[name])
+
 
 
     def get_literal_items(self):
