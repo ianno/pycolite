@@ -106,6 +106,7 @@ class LTLFormula(Observer):
         '''
         Reassigns a new unique name to all literals and update references
         '''
+
         for key, value in self.get_literal_items():
             new_literal = Literal(key, value.context)
             value.merge(new_literal)
