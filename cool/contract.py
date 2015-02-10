@@ -4,12 +4,14 @@ Basic implementation of contract
 Author: Antonio Iannopollo
 '''
 
-from cool.parser.parser import Parser, LTL_PARSER
+from cool.parser.parser import LTL_PARSER
 from cool.parser.lexer import BaseSymbolSet
 from cool.attribute import Attribute
 from cool.formula import Literal, Conjunction, Disjunction, Negation
 from cool.observer import Observer
 from copy import deepcopy
+from cool.refinement_strategy import RefinementStrategy
+from cool.ltl3ba import Ltl3baRefinementStrategy
 
 
 class Port(Observer):
@@ -43,9 +45,6 @@ class Port(Observer):
         self.literal = literal
         self.literal.attach(self)
 
-        #if not base_name == literal.base_name:
-        #    raise PortDeclarationError('cannot assign a literal with different \
-        #            base_name')
 
     def update(self, updated_subject):
         '''
@@ -273,7 +272,7 @@ class Contract(object):
 
         #in case of composition, we need to infer the composition contract
         #ports
-        #we populate the new port list with all the oprts from the composed
+        #we populate the new port list with all the ports from the composed
         #contracts, naming them merging the source contract and the port
         new_inputs = {'%s_%s' % \
             (self.name_attribute.unique_name, base_name): port \
@@ -355,6 +354,18 @@ class Contract(object):
 
         port.merge( other_port )
 
+    def is_refinement(self, abstract_contract, strategy_obj=None):
+        '''
+        Checks whether the calling contract refines abstract_contract
+
+        :returns: boolean
+        '''
+
+        #If a strategy is not defined, uses Ltl3ba
+        if strategy_obj is None:
+            strategy_obj = Ltl3baRefinementStrategy(self)
+
+        return strategy_obj.check_refinement(abstract_contract, delete_files=False)
 
     def __str__(self):
         '''
