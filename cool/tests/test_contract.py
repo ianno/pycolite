@@ -25,7 +25,8 @@ def test_constructor(basic_params):
     '''
     test basic Contract constructor, no errors expected
     '''
-    contract = Contract('C', basic_params[0], basic_params[1], basic_params[2], basic_params[3])
+    contract = Contract('C', basic_params[0],
+            basic_params[1], basic_params[2], basic_params[3], saturated = False)
     assert True
 
 @pytest.fixture()
@@ -36,7 +37,7 @@ def contract_1():
     assume = 'X(b) -> FX!(G(a|b) & F(c))'
     guarantee = 'd & XXXc -> GF(e&d)'
 
-    return Contract('C1', input_p, output_p, assume, guarantee)
+    return Contract('C1', input_p, output_p, assume, guarantee, saturated = False)
 
 @pytest.fixture()
 def contract_2():
@@ -46,7 +47,7 @@ def contract_2():
     assume = 'G(f & Xb | XXc)'
     guarantee = 'F(g|e)'
 
-    return Contract('C2', input_p, output_p, assume, guarantee)
+    return Contract('C2', input_p, output_p, assume, guarantee, saturated = False)
 
 
 
@@ -65,7 +66,8 @@ def test_wrong_ports(wrong_ports):
     expects a PortDeclarationError exception
     '''
     with pytest.raises(PortDeclarationError):
-        contract = Contract('C', wrong_ports[0], wrong_ports[1], wrong_ports[2], wrong_ports[3])
+        contract = Contract('C', wrong_ports[0], wrong_ports[1],
+                wrong_ports[2], wrong_ports[3], saturated = False)
 
 @pytest.fixture()
 def wrong_mapping():
@@ -82,7 +84,8 @@ def test_wrong_mapping(wrong_mapping):
     expects a PortMappingError exception
     '''
     with pytest.raises(PortMappingError):
-        contract = Contract('C', wrong_mapping[0], wrong_mapping[1], wrong_mapping[2], wrong_mapping[3])
+        contract = Contract('C', wrong_mapping[0], wrong_mapping[1],
+                wrong_mapping[2], wrong_mapping[3], saturated = False)
 
 
 
@@ -90,10 +93,12 @@ def test_print(basic_params):
     '''
     Test print function of two identical contracts
     '''
-    contract = Contract('C', basic_params[0], basic_params[1], basic_params[2], basic_params[3])
+    contract = Contract('C', basic_params[0], basic_params[1],
+            basic_params[2], basic_params[3], saturated = False)
     print contract
 
-    contract2 = Contract('C', basic_params[0], basic_params[1], basic_params[2], basic_params[3])
+    contract2 = Contract('C', basic_params[0], basic_params[1],
+            basic_params[2], basic_params[3], saturated = False)
     print contract2
     assert True
 
@@ -179,7 +184,35 @@ def test_out_to_out(contract_1, contract_2):
             [('e', 'g')])
 
 
+def test_copy(contract_1, contract_2):
+    '''
+    test copy of contract after composition
+    '''
+    print 'copy C1, then merge (b, b) and (a, g) and compose copy'
+    print 'before composition'
+    print contract_1
+    print contract_2
 
+    c1c = contract_1.copy()
+    print 'copy:'
+    print c1c
+
+    contract_3 = c1c.compose(contract_2, connection_list = \
+            (('a', 'g'), ('b', 'b')))
+
+    print contract_3
+    c3c = contract_3.copy()
+
+    print 'copy of C3'
+    print c3c
+
+    print 'after_composition'
+    print contract_1
+    print 'copy'
+    print c1c
+
+    assert contract_1.__str__() != c1c.__str__()
+    assert contract_3.__str__() != c3c.__str__()
 
 
 
