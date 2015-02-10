@@ -4,11 +4,12 @@ Basic implementation of contract
 Author: Antonio Iannopollo
 '''
 
-from cool.parser.parser import Parser
+from cool.parser.parser import Parser, LTL_PARSER
 from cool.parser.lexer import BaseSymbolSet
 from cool.attribute import Attribute
 from cool.formula import Literal, Conjunction, Disjunction, Negation
 from cool.observer import Observer
+from copy import deepcopy
 
 
 class Port(Observer):
@@ -95,7 +96,8 @@ class Contract(object):
     '''
 
     def __init__(self, base_name, input_ports, output_ports, assume_formula,
-            guarantee_formula, symbol_set_cls = BaseSymbolSet, context = None):
+            guarantee_formula, symbol_set_cls = BaseSymbolSet, context = None,
+            saturated = True):
         '''
         Instantiate a contract.
 
@@ -120,7 +122,7 @@ class Contract(object):
         :type context: object
         '''
 
-        self.parser = Parser()
+        #self.parser = Parser()
 
         self.symbol_set_cls = symbol_set_cls
         self.context = context
@@ -136,17 +138,23 @@ class Contract(object):
         #literal in either formula is associated to the same attribute.
         #This means the context of both formulae is the current Contract obj
         try:
-            self.assume_formula = self.parser.parse(assume_formula,
+            self.assume_formula = LTL_PARSER.parse(assume_formula,
                     context = self.context, symbol_set_cls = symbol_set_cls)
         except TypeError:
             #the formula is not a string, we assume is a LTLFormula object
             self.assume_formula = assume_formula
 
         try:
-            self.guarantee_formula = self.parser.parse(guarantee_formula,
+            self.guarantee_formula = LTL_PARSER.parse(guarantee_formula,
                     context = self.context, symbol_set_cls = symbol_set_cls)
         except TypeError:
             self.guarantee_formula = guarantee_formula
+
+        #put it in saturated form
+        if not saturated:
+            not_assumpt = Negation(self.assume_formula)
+            self.guarantee_formula = \
+                    Disjunction(not_assumpt, self.guarantee_formula)
 
 
         #the contract has to mantain a detailed list of ports.
@@ -227,6 +235,18 @@ class Contract(object):
                 raise PortMappingError( key )
 
 
+    def copy(self):
+        '''
+        create a copy, with new disconnected ports, of the current contract
+        '''
+
+        new_contract = deepcopy(self)
+        new_contract.assume_formula.reinitialize()
+        new_contract.guarantee_formula.reinitialize()
+        new_contract.name_attribute = \
+                Attribute(self.name_attribute.base_name, self.context)
+
+        return new_contract
 
 
     def compose(self, other_contract, new_name = None, connection_list = None):
@@ -248,7 +268,7 @@ class Contract(object):
         if connection_list is None:
             connection_list = []
         if new_name is None:
-            new_name = '%s (x) %s' % (self.name_attribute.base_name, \
+            new_name = '%s-x-%s' % (self.name_attribute.base_name, \
                     other_contract.name_attribute.base_name)
 
         #in case of composition, we need to infer the composition contract
@@ -367,28 +387,6 @@ class Contract(object):
 
         return ''.join(description)
 
-#    def update(self, updated_subject):
-#        '''
-#        Implementation of the update method from a attribute according to
-#        the observer pattern
-#        '''
-#
-#        updated_literal = updated_subject.get_state()
-#        updated_name = updated_literal.base_name
-#
-#        if updated_name not in self.port_names:
-#            raise KeyError('attribute not in literals dict for the formula')
-#
-#        #attach to the new literal
-#        updated_literal.attach(self)
-#
-#        #detach from the current literal
-#        self.ports_dict[ updated_subject.base_name].detach()
-#
-#        #update the literals list
-#        port_dict = self.port_lookup(updated_subject.base_name)
-#        port_dict[ updated_subject.base_name] = updated_literal
-#
 
     def port_lookup(self, literal_name):
         '''
