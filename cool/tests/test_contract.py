@@ -214,10 +214,18 @@ def test_copy(contract_1, contract_2):
     assert contract_1.__str__() != c1c.__str__()
     assert contract_3.__str__() != c3c.__str__()
 
+def test_refinement_false(contract_1, contract_2):
+    '''
+    Test refinment for two contracts which do not refine each other
+    '''
 
+    assert not contract_1.is_refinement(contract_2)
+    assert not contract_2.is_refinement(contract_1)
 
-
-
-
-
+def test_self_refinement(contract_1):
+    '''
+    A contract always refines itself
+    '''
+    print 'dddd'
+    print contract_1.is_refinement(contract_1)
 
