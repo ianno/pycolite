@@ -104,6 +104,7 @@ class Attribute(Subject):
 
         self.merging_attribute = None
         self.base_name = base_name
+        self.context = context
         self.unique_name = AttributeNamePool.get_unique_name(context, self.base_name)
 
     def set_state(self, merging_attribute):
