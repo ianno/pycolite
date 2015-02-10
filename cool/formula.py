@@ -329,14 +329,18 @@ class BinaryFormula(LTLFormula):
 
         if current_symbol_direction == 'left':
             if left_index < current_symbol_index:
-                left_string = '(%s)' % left_string
+                left_string = '%s%s%s' % \
+                    (symbol_set.symbols['LPAREN'], left_string, symbol_set.symbols['LPAREN'])
             if right_index <= current_symbol_index:
-                right_string = '(%s)' % right_string
+                right_string = '%s%s%s' % \
+                    (symbol_set.symbols['LPAREN'], right_string, symbol_set.symbols['RPAREN'])
         elif current_symbol_direction == 'right':
             if left_index <= current_symbol_index:
-                left_string = '(%s)' % left_string
+                left_string = '%s%s%s' % \
+                    (symbol_set.symbols['LPAREN'], left_string, symbol_set.symbols['RPAREN'])
             if right_index < current_symbol_index:
-                right_string = '(%s)' % right_string
+                right_string = '%s%s%s' % \
+                    (symbol_set.symbols['LPAREN'], right_string, symbol_set.symbols['RPAREN'])
         else:
             raise NotImplementedError
 
@@ -407,7 +411,8 @@ class UnaryFormula(LTLFormula):
 
         if current_symbol_direction == 'right':
             if right_index < current_symbol_index:
-                right_string = '(%s)' % right_string
+                right_string = '%s%s%s' % \
+                    (symbol_set.symbols['LPAREN'], right_string, symbol_set.symbols['RPAREN'])
         else:
             raise NotImplementedError
 

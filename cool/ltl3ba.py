@@ -13,7 +13,7 @@ from re import sub
 
 TEMP_FILES_PATH = 'resources/temp/'
 LTL3BA_PATH = 'resources/ltl3ba/'
-LTL3BA_FALSE = '''T0_init:\n    false;\n}\n0\n'''
+LTL3BA_FALSE = '''T0_init:\n\tfalse;\n}\n0\n'''
 
 
 class Ltl3baRefinementStrategy(object):
