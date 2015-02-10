@@ -20,7 +20,10 @@ class BaseSymbolSet(object):
         'EQUALITY' : r'<->',
         'NOT' : r'!',
         'TRUE' : r'1',
-        'FALSE' : r'0'}
+        'FALSE' : r'0',
+        'LPAREN' : r'\(',
+        'RPAREN' : r'\)'
+        }
 
 class Lexer(object):
     tokens = ['LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALITY',
@@ -55,11 +58,11 @@ class Lexer(object):
         self.t_UNTIL = symbol_set_cls.symbols['UNTIL']
         self.t_RELEASE = symbol_set_cls.symbols['RELEASE']
         self.t_WEAK_UNTIL = symbol_set_cls.symbols['WEAK_UNTIL']
-        self.t_LPAREN = r'\('
-        self.t_RPAREN = r'\)'
+        self.t_LPAREN = symbol_set_cls.symbols['LPAREN']
+        self.t_RPAREN = symbol_set_cls.symbols['RPAREN']
         self.t_TRUE = symbol_set_cls.symbols['TRUE']
         self.t_FALSE = symbol_set_cls.symbols['FALSE']
-        self.t_LITERAL = r'[a-z_][a-zA-Z0-9_]*'
+        self.t_LITERAL = r'[a-z_][a-z0-9_]*'
 
         self.__build()
 
