@@ -313,9 +313,7 @@ class Contract(object):
                     (other_contract.name_attribute.unique_name, \
                         other_port_name)]
             #output/output
-            #exception managed in connection_to_port
-            assert not ( (port_name in self.output_ports_dict) and \
-                    (other_port_name in other_contract.output_ports_dict) )
+                raise PortConnectionError('Cannot connect two output ports')
 
 
         and_of_assumptions = Conjunction(self.assume_formula, \
@@ -335,7 +333,7 @@ class Contract(object):
     def connect_to_port(self, port_name, other_contract, other_port_name):
         '''
         Connect a port of the current contract with a port of another contract.
-        The only constraint is that we cannot connect two output ports.
+        Here it is allowed connecting two output ports.
 
         :param port_name: base name of the current contract port
         :type port_name: string
@@ -346,10 +344,6 @@ class Contract(object):
         '''
         port = self.ports_dict[port_name]
         other_port = other_contract.ports_dict[other_port_name]
-
-        if ( port.unique_name in self.reverse_output_ports_dict ) and \
-                ( other_port.unique_name in other_contract.reverse_output_ports_dict ):
-            raise PortConnectionError('Cannot connect two output ports')
 
 
         port.merge( other_port )
