@@ -8,9 +8,9 @@ used for the generation of the LTL specs.
 '''
 
 from cool.parser.lexer import BaseSymbolSet
-from cool.attribute import Attribute, AttributeNamePool
+from cool.attribute import Attribute
 from abc import abstractmethod
-from observer import Observer
+from cool.observer import Observer
 
 PRECEDENCE_TUPLE = (
     ('left', 'IMPLICATION', 'EQUALITY'),
@@ -56,7 +56,7 @@ class LTLFormula(Observer):
         '''
         self.literals = {}
 
-    def generate(self, symbol_set = None):
+    def generate(self, symbol_set=None, ignore_precedence=False):
         '''
         doc
         '''
@@ -80,7 +80,7 @@ class LTLFormula(Observer):
         updated_attribute.attach(self)
 
         #detach from the current attribute
-        self.literals[ updated_subject.base_name  ].detach(self)
+        self.literals[updated_subject.base_name].detach(self)
 
         #update the literals list
         if updated_attribute.base_name not in self.literals:
@@ -127,7 +127,7 @@ class Literal(Attribute, LTLFormula):
 
     is_literal = True
 
-    def __init__(self, base_name, context = None):
+    def __init__(self, base_name, context=None):
         '''
         instantiate a new literal.
 
@@ -140,7 +140,7 @@ class Literal(Attribute, LTLFormula):
         LTLFormula.__init__(self)
         Attribute.__init__(self, base_name, context)
 
-    def generate(self, symbol_set = None):
+    def generate(self, symbol_set=None, ignore_precendence=False):
         '''
         doc
         '''
@@ -300,7 +300,7 @@ class BinaryFormula(LTLFormula):
                 self.literals[self.right_formula.base_name] = self.right_formula
 
 
-    def generate(self, symbol_set = None):
+    def generate(self, symbol_set=None, ignore_precedence=False):
         '''
         doc
         '''
@@ -324,25 +324,38 @@ class BinaryFormula(LTLFormula):
             right_index = len(PRECEDENCE_TUPLE)
 
 
-        left_string = self.left_formula.generate(symbol_set)
-        right_string = self.right_formula.generate(symbol_set)
+        left_string = self.left_formula.generate(symbol_set, ignore_precedence)
+        right_string = self.right_formula.generate(symbol_set, ignore_precedence)
 
-        if current_symbol_direction == 'left':
-            if left_index < current_symbol_index:
-                left_string = '%s%s%s' % \
-                    (symbol_set.symbols['LPAREN'], left_string, symbol_set.symbols['LPAREN'])
-            if right_index <= current_symbol_index:
-                right_string = '%s%s%s' % \
-                    (symbol_set.symbols['LPAREN'], right_string, symbol_set.symbols['RPAREN'])
-        elif current_symbol_direction == 'right':
-            if left_index <= current_symbol_index:
-                left_string = '%s%s%s' % \
-                    (symbol_set.symbols['LPAREN'], left_string, symbol_set.symbols['RPAREN'])
-            if right_index < current_symbol_index:
-                right_string = '%s%s%s' % \
-                    (symbol_set.symbols['LPAREN'], right_string, symbol_set.symbols['RPAREN'])
+        if ignore_precedence:
+            left_string = '%s%s%s' % \
+                    (symbol_set.symbols['LPAREN'], left_string, \
+                    symbol_set.symbols['RPAREN'])
+
+            right_string = '%s%s%s' % \
+                    (symbol_set.symbols['LPAREN'], right_string, \
+                    symbol_set.symbols['RPAREN'])
         else:
-            raise NotImplementedError
+            if current_symbol_direction == 'left':
+                if left_index < current_symbol_index:
+                    left_string = '%s%s%s' % \
+                        (symbol_set.symbols['LPAREN'], left_string, \
+                        symbol_set.symbols['RPAREN'])
+                if right_index <= current_symbol_index:
+                    right_string = '%s%s%s' % \
+                        (symbol_set.symbols['LPAREN'], right_string, \
+                        symbol_set.symbols['RPAREN'])
+            elif current_symbol_direction == 'right':
+                if left_index <= current_symbol_index:
+                    left_string = '%s%s%s' % \
+                        (symbol_set.symbols['LPAREN'], left_string, \
+                        symbol_set.symbols['RPAREN'])
+                if right_index < current_symbol_index:
+                    right_string = '%s%s%s' % \
+                        (symbol_set.symbols['LPAREN'], right_string, \
+                        symbol_set.symbols['RPAREN'])
+            else:
+                raise NotImplementedError
 
         return '%s %s %s' % (left_string, symbol_set.symbols[self.Symbol], right_string)
 
@@ -391,7 +404,7 @@ class UnaryFormula(LTLFormula):
 
 
 
-    def generate(self, symbol_set = None):
+    def generate(self, symbol_set=None, ignore_precendence=False):
         '''
         doc
         '''
@@ -407,14 +420,18 @@ class UnaryFormula(LTLFormula):
         except NotFoundError:
             right_index = len(PRECEDENCE_TUPLE)
 
-        right_string = self.right_formula.generate(symbol_set)
+        right_string = self.right_formula.generate(symbol_set, ignore_precendence)
 
-        if current_symbol_direction == 'right':
-            if right_index < current_symbol_index:
-                right_string = '%s%s%s' % \
+        if ignore_precendence:
+            right_string = '%s%s%s' % \
                     (symbol_set.symbols['LPAREN'], right_string, symbol_set.symbols['RPAREN'])
         else:
-            raise NotImplementedError
+            if current_symbol_direction == 'right':
+                if right_index < current_symbol_index:
+                    right_string = '%s%s%s' % \
+                        (symbol_set.symbols['LPAREN'], right_string, symbol_set.symbols['RPAREN'])
+            else:
+                raise NotImplementedError
 
         return '%s %s' % (symbol_set.symbols[self.Symbol], right_string)
 

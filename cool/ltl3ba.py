@@ -8,12 +8,12 @@ from cool.refinement_strategy import RefinementStrategy
 from tempfile import NamedTemporaryFile
 from subprocess import check_output
 from cool.formula import Negation, Implication
-from cool.symbol_sets import SpinSymbolSet
+from cool.symbol_sets import Ltl3baSymbolSet
 from re import sub
 
 TEMP_FILES_PATH = 'resources/temp/'
 LTL3BA_PATH = 'resources/ltl3ba/'
-LTL3BA_FALSE = '''T0_init:\n\tfalse;\n}\n0\n'''
+LTL3BA_FALSE = 'T0_init:\n\tfalse;\n}\n'
 
 
 class Ltl3baRefinementStrategy(object):
@@ -70,6 +70,8 @@ class Ltl3baRefinementStrategy(object):
 
             if output.endswith(LTL3BA_FALSE):
                 return True
+
+        print output
         return False
 
     def _get_assumptions_check_str(self, abstract_contract):
@@ -106,14 +108,13 @@ class Ltl3baRefinementStrategy(object):
         implication = Implication(left_formula, right_formula)
         negation = Negation(implication)
 
-        check_str = negation.generate(symbol_set=SpinSymbolSet)
-
+        check_str = negation.generate(symbol_set=Ltl3baSymbolSet, ignore_precendence=True)
         #make sure file is on a single line and all variables are lowercase
         #(required by ltl3ba)
         #check_str = check_str.lower()
         check_str = check_str.replace('\n', '')
         check_str = check_str.replace('\r', '')
-        check_str = sub(' +', ' ', check_str)
+        #check_str = sub(' +', ' ', check_str)
 
         return check_str
 

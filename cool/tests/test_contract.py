@@ -226,6 +226,5 @@ def test_self_refinement(contract_1):
     '''
     A contract always refines itself
     '''
-    print 'dddd'
-    print contract_1.is_refinement(contract_1)
-
+    c_test = contract_1.is_refinement(contract_1)
+    assert c_test
