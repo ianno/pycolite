@@ -404,7 +404,7 @@ class UnaryFormula(LTLFormula):
 
 
 
-    def generate(self, symbol_set=None, ignore_precendence=False):
+    def generate(self, symbol_set=None, ignore_precedence=False):
         '''
         doc
         '''
@@ -420,9 +420,9 @@ class UnaryFormula(LTLFormula):
         except NotFoundError:
             right_index = len(PRECEDENCE_TUPLE)
 
-        right_string = self.right_formula.generate(symbol_set, ignore_precendence)
+        right_string = self.right_formula.generate(symbol_set, ignore_precedence)
 
-        if ignore_precendence:
+        if ignore_precedence:
             right_string = '%s%s%s' % \
                     (symbol_set.symbols['LPAREN'], right_string, symbol_set.symbols['RPAREN'])
         else:
