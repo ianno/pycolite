@@ -36,45 +36,29 @@ class Ltl3baRefinementStrategy(object):
         '''
         #create temp files
         contract_name = self.refining_contract.name_attribute.unique_name
-        assumption_file = NamedTemporaryFile( \
-                prefix='%s_assumptions_ltl3ba_' % contract_name, \
-                dir=TEMP_FILES_PATH, suffix='.ltl', delete=delete_files)
-        guarantee_file = NamedTemporaryFile( \
-                prefix='%s_guarantees_ltl3ba_' % contract_name,
-                dir=TEMP_FILES_PATH, suffix='.ltl', delete=delete_files)
 
         #create formulae to be checked
-        assumption_str = self._get_assumptions_check_str(abstract_contract)
-        guarantee_str = self._get_guarantee_check_str(abstract_contract)
-
-        ltl3ba_location = self.tool_location + self.exec_name
+        assumption_check_formula = self._get_assumptions_check_formula(abstract_contract)
+        guarantee_check_formula = self._get_guarantee_check_formula(abstract_contract)
 
         #check assumptions
-        with assumption_file:
-            assumption_file.write(assumption_str)
-            assumption_file.seek(0)
-
-            output = check_output([ltl3ba_location, '-F', assumption_file.name])
-
-        #to check if formula implication is valid, we negate it
-        #and check that the negation is an empty automaton
-        if output.endswith(LTL3BA_FALSE):
+        output = verify_tautology(assumption_check_formula, \
+                    prefix='%s_assumptions_ltl3ba_' % contract_name, \
+                    tool_location=self.tool_location, \
+                    exec_name=self.exec_name,
+                    delete_file=delete_files)
+        if output:
             #check guarantees
+            output = verify_tautology(guarantee_check_formula, \
+                    prefix='%s_guarantees_ltl3ba_' % contract_name, \
+                    tool_location=self.tool_location,
+                    exec_name=self.exec_name,
+                    delete_file=delete_files)
 
-            with guarantee_file:
 
-                guarantee_file.write(guarantee_str)
-                guarantee_file.seek(0)
+        return output
 
-                output = check_output([ltl3ba_location, '-F', guarantee_file.name])
-
-            if output.endswith(LTL3BA_FALSE):
-                return True
-
-        print output
-        return False
-
-    def _get_assumptions_check_str(self, abstract_contract):
+    def _get_assumptions_check_formula(self, abstract_contract):
         '''
         Returns a string representing the implication of the two contracts
         assumptions:
@@ -84,9 +68,9 @@ class Ltl3baRefinementStrategy(object):
         abstract_assume = abstract_contract.assume_formula
         refining_assume = self.refining_contract.assume_formula
 
-        return self._create_ltl3ba_str(abstract_assume, refining_assume)
+        return Implication(abstract_assume, refining_assume)
 
-    def _get_guarantee_check_str(self, abstract_contract):
+    def _get_guarantee_check_formula(self, abstract_contract):
         '''
         Returns a string representing the implication of the two contracts
         assumptions:
@@ -96,27 +80,44 @@ class Ltl3baRefinementStrategy(object):
         abstract_guarantee = abstract_contract.guarantee_formula
         refining_guarantee = self.refining_contract.guarantee_formula
 
-        return self._create_ltl3ba_str(refining_guarantee, abstract_guarantee)
+        return Implication(refining_guarantee, abstract_guarantee)
 
 
-    def _create_ltl3ba_str(self, left_formula, right_formula):
-        '''
-        Create the negation of an implication given the left
-        and right formulae
-        '''
+def verify_tautology(formula, prefix='', tool_location=LTL3BA_PATH, \
+                                exec_name='ltl3ba', delete_file=True):
+    '''
+    Verifies if a LTLFormula object represents a tautology
+    '''
 
-        implication = Implication(left_formula, right_formula)
-        negation = Negation(implication)
+    #to check if formula implication is valid, we negate it
+    #and check that the negation is an empty automaton
 
-        check_str = negation.generate(symbol_set=Ltl3baSymbolSet, ignore_precendence=True)
-        #make sure file is on a single line and all variables are lowercase
-        #(required by ltl3ba)
-        #check_str = check_str.lower()
-        check_str = check_str.replace('\n', '')
-        check_str = check_str.replace('\r', '')
-        #check_str = sub(' +', ' ', check_str)
+    n_formula = Negation(formula)
 
-        return check_str
+    temp_file = NamedTemporaryFile( \
+            prefix='%s' % prefix,
+            dir=TEMP_FILES_PATH, suffix='.ltl', delete=delete_file)
+
+    ltl3ba_location = tool_location + exec_name
+
+    with temp_file:
+        formula_str = n_formula.generate(symbol_set=Ltl3baSymbolSet, \
+                ignore_precedence=True)
+
+        temp_file.write(formula_str)
+        temp_file.seek(0)
+
+        output = check_output([ltl3ba_location, '-F', temp_file.name])
+
+        if output.endswith(LTL3BA_FALSE):
+            return True
+        else:
+            print output
+            return False
+
+
+
 
 
 RefinementStrategy.register(Ltl3baRefinementStrategy)
+
