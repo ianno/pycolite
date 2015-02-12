@@ -1,7 +1,7 @@
 '''
-This module includes the implementation of the contract refinement operation.
-Since an external tool is needed to perform such operation,
-the strategy pattern is implemented to allow easy swap between different tools.
+This module includes the definition of abstract classes to be used in
+interfacing with external tools.
+The strategy pattern is implemented to allow easy swap between different tools.
 
 Author: Antonio Iannopollo
 '''
@@ -27,3 +27,38 @@ class RefinementStrategy:
         '''
         raise NotImplementedError
 
+class CompatibilityStrategy:
+    '''
+    Metaclass defining the compatibility check set of operations
+    '''
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def check_compatibility(self):
+        '''
+        Checks if the calling Contract object is compatible.
+        A contract is compatible iff there exists at least one environment
+        in which it can operate, that is, the assumption formula must not
+        be empty
+        '''
+        raise NotImplementedError
+
+class ConsistencyStrategy:
+    '''
+    Metaclass defining the consistency check set of operations
+    '''
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def check_consistency(self):
+        '''
+        Checks if the calling Contract object is consistent.
+        A contract is consistent iff it is not self-contradicting. In case of a
+        self-contradicting contract, it is impossible to find an implementation
+        that satisfies it. Thus to verify consistency, we need to check that the
+        guarantee formula is not an empty formula
+
+        '''
+        raise NotImplementedError
