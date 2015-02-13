@@ -12,6 +12,9 @@ from cool.attribute import Attribute
 from abc import abstractmethod
 from cool.observer import Observer
 
+import logging
+LOG = logging.getLogger()
+
 PRECEDENCE_TUPLE = (
     ('left', 'IMPLICATION', 'EQUALITY'),
     ('left', 'AND', 'OR'),

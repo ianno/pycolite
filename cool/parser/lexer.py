@@ -1,7 +1,8 @@
 import ply.lex as lex
-import ply.yacc
 import re
 
+import logging
+LOG = logging.getLogger()
 
 class BaseSymbolSet(object):
     '''
@@ -38,9 +39,9 @@ class Lexer(object):
     # Error handling rule
     # No return value. Token discarded
     def t_error(self, t):
-            print "Illegal character '%s'" % t.value[0]
-            t.lexer.skip(1)
-            #raise IllegalValueError(t.value[0])
+        LOG.debug("Illegal character '%s'" % t.value[0])
+        t.lexer.skip(1)
+        #raise IllegalValueError(t.value[0])
 
 
 

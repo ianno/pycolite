@@ -2,6 +2,9 @@ from .. import formula
 import lexer
 import ply.yacc as yacc
 
+import logging
+LOG = logging.getLogger()
+
 
 class Parser(object):
 
@@ -19,7 +22,7 @@ class Parser(object):
         self.__build()
 
     def p_error(self, p):
-        print 'Error'
+        LOG.debug('Error')
         print p
         raise GeneralError(p)
 
