@@ -10,9 +10,13 @@ from cool.attribute import Attribute
 from cool.formula import Literal, Conjunction, Disjunction, Negation
 from cool.observer import Observer
 from copy import deepcopy
-from cool.refinement_strategy import RefinementStrategy
-from cool.ltl3ba import Ltl3baRefinementStrategy
+from cool.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
+                         Ltl3baConsistencyStrategy)
+import logging
 
+LOG = logging.getLogger()
+
+LOG.debug('in contract.py')
 
 class Port(Observer):
     '''
@@ -20,7 +24,7 @@ class Port(Observer):
     keeps constant its base name
     '''
 
-    def __init__(self, base_name, literal = None, context = None):
+    def __init__(self, base_name, literal=None, context=None):
         '''
         Creates a new port and associates a literal.
         If no literal is provided, a new one will be created.
@@ -95,8 +99,8 @@ class Contract(object):
     '''
 
     def __init__(self, base_name, input_ports, output_ports, assume_formula,
-            guarantee_formula, symbol_set_cls = BaseSymbolSet, context = None,
-            saturated = True):
+                 guarantee_formula, symbol_set_cls=BaseSymbolSet, context=None,
+                 saturated=True):
         '''
         Instantiate a contract.
 
@@ -121,8 +125,6 @@ class Contract(object):
         :type context: object
         '''
 
-        #self.parser = Parser()
-
         self.symbol_set_cls = symbol_set_cls
         self.context = context
 
@@ -137,15 +139,15 @@ class Contract(object):
         #literal in either formula is associated to the same attribute.
         #This means the context of both formulae is the current Contract obj
         try:
-            self.assume_formula = LTL_PARSER.parse(assume_formula,
-                    context = self.context, symbol_set_cls = symbol_set_cls)
+            self.assume_formula = LTL_PARSER.parse(assume_formula, \
+                    context=self.context, symbol_set_cls=symbol_set_cls)
         except TypeError:
             #the formula is not a string, we assume is a LTLFormula object
             self.assume_formula = assume_formula
 
         try:
-            self.guarantee_formula = LTL_PARSER.parse(guarantee_formula,
-                    context = self.context, symbol_set_cls = symbol_set_cls)
+            self.guarantee_formula = LTL_PARSER.parse(guarantee_formula, \
+                    context=self.context, symbol_set_cls=symbol_set_cls)
         except TypeError:
             self.guarantee_formula = guarantee_formula
 
@@ -191,13 +193,13 @@ class Contract(object):
                 #try to associate by base_name
                 if literal_name in self.formulae_dict:
                     port_dict[literal_name] = \
-                        Port(literal_name, literal = \
+                        Port(literal_name, literal=\
                         self.formulae_dict[literal_name], \
-                        context = self.context)
+                        context=self.context)
                 #otherwise create new Port
                 else:
                     port_dict[literal_name] = \
-                        Port(literal_name, context = self.context)
+                        Port(literal_name, context=self.context)
 
             ##observer pattern - attach to the subject
             #port_dict[literal_name].attach(self)
@@ -207,9 +209,9 @@ class Contract(object):
         #we need to make sure there are not ports which are both input and
         #output
         if not set(self.input_ports_dict.viewkeys()).isdisjoint( \
-                set(self.output_ports_dict.viewkeys()) ):
-            raise PortDeclarationError( self.input_ports_dict.viewkeys() & \
-                    self.output_ports_dict.viewkeys() )
+                set(self.output_ports_dict.viewkeys())):
+            raise PortDeclarationError(self.input_ports_dict.viewkeys() & \
+                    self.output_ports_dict.viewkeys())
 
 
         #now we need to check that the declared input and output ports
@@ -231,7 +233,7 @@ class Contract(object):
             try:
                 literal.merge(self.ports_dict[literal.base_name].literal)
             except KeyError:
-                raise PortMappingError( key )
+                raise PortMappingError(key)
 
 
     def copy(self):
@@ -248,7 +250,7 @@ class Contract(object):
         return new_contract
 
 
-    def compose(self, other_contract, new_name = None, connection_list = None):
+    def compose(self, other_contract, new_name=None, connection_list=None):
         '''
         Compose the current contract with the one passed as a parameter.
         The operations to be done are: merge the literals, and merge the
@@ -302,30 +304,33 @@ class Contract(object):
                     (other_contract.name_attribute.unique_name, \
                         other_port_name)]
             #input/output becomes a output
-            if (port_name in self.input_ports_dict) and \
+            elif (port_name in self.input_ports_dict) and \
                     (other_port_name in other_contract.output_ports_dict):
                 del new_inputs['%s_%s' % \
                     (self.name_attribute.unique_name, port_name)]
             #output/input
-            if (port_name in self.output_ports_dict) and \
+            elif (port_name in self.output_ports_dict) and \
                     (other_port_name in other_contract.input_ports_dict):
                 del new_inputs['%s_%s' % \
                     (other_contract.name_attribute.unique_name, \
                         other_port_name)]
             #output/output
+            #if ((port_name in self.output_ports_dict) and \
+            #        (other_port_name in other_contract.output_ports_dict)):
+            else:
                 raise PortConnectionError('Cannot connect two output ports')
 
 
         and_of_assumptions = Conjunction(self.assume_formula, \
-                other_contract.assume_formula, merge_literals = False)
+                other_contract.assume_formula, merge_literals=False)
 
         new_guarantees = Conjunction(self.guarantee_formula, \
-                other_contract.guarantee_formula, merge_literals = False)
+                other_contract.guarantee_formula, merge_literals=False)
 
         neg_guarantees = Negation(new_guarantees)
 
         new_assumptions = Disjunction(and_of_assumptions, neg_guarantees, \
-                merge_literals = False)
+                merge_literals=False)
 
         return Contract(new_name, new_inputs, new_outputs, new_assumptions, \
                 new_guarantees, self.symbol_set_cls, self.context)
@@ -346,7 +351,7 @@ class Contract(object):
         other_port = other_contract.ports_dict[other_port_name]
 
 
-        port.merge( other_port )
+        port.merge(other_port)
 
     def is_refinement(self, abstract_contract, strategy_obj=None):
         '''
@@ -361,13 +366,39 @@ class Contract(object):
 
         return strategy_obj.check_refinement(abstract_contract, delete_files=False)
 
+    def is_consistent(self, strategy_obj=None):
+        '''
+        Returns True if the contract is consistent. False otherwise.
+        A contract is consistent iff it is not self-contradicting. In case of a
+        self-contradicting contract, it is impossible to find an implementation
+        that satisfies it. Thus to verify consistency, we need to check that the
+        guarantee formula is not an empty formula
+        '''
+        if strategy_obj is None:
+            strategy_obj = Ltl3baConsistencyStrategy(self)
+
+        return strategy_obj.check_consistency(delete_files=False)
+
+    def is_compatible(self, strategy_obj=None):
+        '''
+        Returns True if the contract is compatible, False otherwise.
+        A contract is compatible iff there is at least a valid environment in
+        which it can operate. Therefore we need to verify that the assumption
+        formula is not empty.
+        '''
+
+        if strategy_obj is None:
+            strategy_obj = Ltl3baCompatibilityStrategy(self)
+
+        return strategy_obj.check_compatibility(delete_files=False)
+
     def __str__(self):
         '''
         Defining print representation for a contract
         '''
         description = []
         description.append('Contract %s ( %s )\n' % \
-            ( self.name_attribute.unique_name, self.name_attribute.base_name ) )
+            (self.name_attribute.unique_name, self.name_attribute.base_name))
 
         description.append('\tInput ports:\n')
 
