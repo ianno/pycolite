@@ -28,12 +28,10 @@ class BaseSymbolSet(object):
 
 class Lexer(object):
 
-    #reserved = {}
 
     tokens = ['LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALITY',
         'GLOBALLY', 'EVENTUALLY', 'NEXT', 'UNTIL', 'RELEASE',
-        'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE'] #+ \
-        #    list(reserved.values())
+        'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE'] 
 
 
     def t_COMMENT(self, t):
