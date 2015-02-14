@@ -20,16 +20,20 @@ class BaseSymbolSet(object):
         'IMPLICATION' : r'->',
         'EQUALITY' : r'<->',
         'NOT' : r'!',
-        'TRUE' : r'1',
-        'FALSE' : r'0',
+        'TRUE' : r'true',
+        'FALSE' : r'false',
         'LPAREN' : r'(',
         'RPAREN' : r')'
         }
 
 class Lexer(object):
+
+    #reserved = {}
+
     tokens = ['LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALITY',
         'GLOBALLY', 'EVENTUALLY', 'NEXT', 'UNTIL', 'RELEASE',
-        'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE']
+        'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE'] #+ \
+        #    list(reserved.values())
 
 
     def t_COMMENT(self, t):
@@ -43,9 +47,17 @@ class Lexer(object):
         t.lexer.skip(1)
         #raise IllegalValueError(t.value[0])
 
+    def t_LITERAL(self, t):
+        r'[a-z_][a-zA-Z0-9_]*'
+        #check for illegal values
+        t.type = self.reserved.get(t.value, 'LITERAL')
+        return t
 
+    def __init__(self, symbol_set_cls=BaseSymbolSet):
 
-    def __init__(self, symbol_set_cls = BaseSymbolSet):
+        self.symbol_set_cls = symbol_set_cls
+        self.reserved = {key:value for (value,key) in
+                         symbol_set_cls.symbols.items()}
 
         self.t_ignore = ' \t'
         self.t_AND = symbol_set_cls.symbols['AND']
@@ -63,7 +75,7 @@ class Lexer(object):
         self.t_RPAREN = re.escape(symbol_set_cls.symbols['RPAREN'])
         self.t_TRUE = symbol_set_cls.symbols['TRUE']
         self.t_FALSE = symbol_set_cls.symbols['FALSE']
-        self.t_LITERAL = r'[a-z_][a-zA-Z0-9_]*'
+        #self.t_LITERAL = r'[a-z_][a-zA-Z0-9_]*'
 
         self.__build()
 

@@ -70,7 +70,7 @@ def fault_guarantee_contract():
     input_p = set(('z'))
     output_p = set(('w'))
 
-    assume = '1'
+    assume = 'true'
     guarantee = 'Gw & X!w'
 
     return Contract('Cf', input_p, output_p, assume, guarantee, saturated=False)
