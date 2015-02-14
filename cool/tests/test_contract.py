@@ -26,7 +26,7 @@ def test_constructor(basic_params):
     test basic Contract constructor, no errors expected
     '''
     contract = Contract('C', basic_params[0],
-            basic_params[1], basic_params[2], basic_params[3], saturated = False)
+            basic_params[1], basic_params[2], basic_params[3], saturated=False)
     assert True
 
 @pytest.fixture()
@@ -37,7 +37,7 @@ def contract_1():
     assume = 'X(b) -> FX!(G(a|b) & F(c))'
     guarantee = 'd & XXXc -> GF(e&d)'
 
-    return Contract('C1', input_p, output_p, assume, guarantee, saturated = False)
+    return Contract('C1', input_p, output_p, assume, guarantee, saturated=False)
 
 @pytest.fixture()
 def contract_2():
@@ -47,7 +47,41 @@ def contract_2():
     assume = 'G(f & Xb | XXc)'
     guarantee = 'F(g|e)'
 
-    return Contract('C2', input_p, output_p, assume, guarantee, saturated = False)
+    return Contract('C2', input_p, output_p, assume, guarantee, saturated=False)
+
+@pytest.fixture()
+def fault_assume_contract():
+    '''
+    Returns a contract with empty assumptions and guarantees
+    '''
+    input_p = set(('z'))
+    output_p = set(('w'))
+
+    assume = 'Gz & F!z'
+    guarantee = 'Gw'
+
+    return Contract('Cf', input_p, output_p, assume, guarantee, saturated=False)
+
+@pytest.fixture()
+def fault_guarantee_contract():
+    '''
+    Returns a contract with empty assumptions and guarantees
+    '''
+    input_p = set(('z'))
+    output_p = set(('w'))
+
+    assume = '1'
+    guarantee = 'Gw & X!w'
+
+    return Contract('Cf', input_p, output_p, assume, guarantee, saturated=False)
+
+@pytest.fixture()
+def c1_compose_c2(contract_1, contract_2):
+    '''
+    returns a composition of c1 and c2
+    '''
+    return contract_1.compose(contract_2, connection_list=\
+                              (('a', 'g'), ('b', 'b')))
 
 
 
@@ -228,3 +262,42 @@ def test_self_refinement(contract_1):
     '''
     c_test = contract_1.is_refinement(contract_1)
     assert c_test
+
+
+def test_compatible_ok(contract_1):
+    '''
+    Contract_1 should be compatible
+    '''
+    assert contract_1.is_compatible()
+
+def test_consistent_ok(contract_1):
+    '''
+    Contract_1 should be consistent
+    '''
+    assert contract_1.is_consistent()
+
+def test_compatible_fault(fault_assume_contract):
+    '''
+    Fault_contract shouldn't be compatible
+    '''
+    assert not fault_assume_contract.is_compatible()
+
+def test_consistent_fault(fault_guarantee_contract):
+    '''
+    fault_contract shouldn't be consistent
+    '''
+    assert not fault_guarantee_contract.is_consistent()
+
+def test_composition_compatible(c1_compose_c2):
+    '''
+    c1 x c2 should be compatible
+    '''
+    assert c1_compose_c2.is_compatible()
+
+def test_composition_consistent(c1_compose_c2):
+    '''
+    c1 x c2 should be consistent
+    '''
+    assert c1_compose_c2.is_consistent()
+
+
