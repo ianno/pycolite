@@ -4,12 +4,12 @@ This module inlcudes all the classes and operations related to ltl3ba
 Author: Antonio Iannopollo
 '''
 
-from cool.interface_strategy import RefinementStrategy, \
+from pyco.interface_strategy import RefinementStrategy, \
             CompatibilityStrategy, ConsistencyStrategy
 from tempfile import NamedTemporaryFile
 from subprocess import check_output
-from cool.formula import Negation, Implication
-from cool.symbol_sets import Ltl3baSymbolSet
+from pyco.formula import Negation, Implication
+from pyco.symbol_sets import Ltl3baSymbolSet
 
 import logging
 LOG = logging.getLogger()

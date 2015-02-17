@@ -3,14 +3,14 @@ Basic implementation of contract
 
 Author: Antonio Iannopollo
 '''
-
-from cool.parser.parser import LTL_PARSER
-from cool.parser.lexer import BaseSymbolSet
-from cool.attribute import Attribute
-from cool.formula import Literal, Conjunction, Disjunction, Negation
-from cool.observer import Observer
+ 
+from pyco.parser.parser import LTL_PARSER
+from pyco.parser.lexer import BaseSymbolSet
+from pyco.attribute import Attribute
+from pyco.formula import Literal, Conjunction, Disjunction, Negation
+from pyco.observer import Observer
 from copy import deepcopy
-from cool.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
+from pyco.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
                          Ltl3baConsistencyStrategy)
 import logging
 
@@ -120,7 +120,7 @@ class Contract(object):
         :param symbol_set_cls: symbol set class, used to decode furmula strings
             and to generate string representation of LTLFormula objects
         :type symbol_set_cls: class, preferably extending
-            cool.parser.lexer.BaseSymbolSet
+            pyco.parser.lexer.BaseSymbolSet
         :param context: fomrula context for unique variable naming
         :type context: object
         '''

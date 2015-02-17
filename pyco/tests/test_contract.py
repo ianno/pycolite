@@ -5,7 +5,7 @@ author: Antonio Iannopollo
 '''
 
 import pytest
-from cool.contract import Contract, PortDeclarationError, PortMappingError, \
+from pyco.contract import Contract, PortDeclarationError, PortMappingError, \
                         PortConnectionError
 
 @pytest.fixture()

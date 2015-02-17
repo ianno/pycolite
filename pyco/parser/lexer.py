@@ -31,7 +31,7 @@ class Lexer(object):
 
     tokens = ['LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALITY',
         'GLOBALLY', 'EVENTUALLY', 'NEXT', 'UNTIL', 'RELEASE',
-        'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE'] 
+        'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE']
 
 
     def t_COMMENT(self, t):

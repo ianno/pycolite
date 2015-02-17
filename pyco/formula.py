@@ -7,10 +7,10 @@ used for the generation of the LTL specs.
 @author: antonio
 '''
 
-from cool.parser.lexer import BaseSymbolSet
-from cool.attribute import Attribute
+from pyco.parser.lexer import BaseSymbolSet
+from pyco.attribute import Attribute
 from abc import abstractmethod
-from cool.observer import Observer
+from pyco.observer import Observer
 
 import logging
 LOG = logging.getLogger()

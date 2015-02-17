@@ -8,7 +8,7 @@ This module uses the observer pattern.
 Author: Antonio Iannopollo
 '''
 
-from cool.observer import Subject
+from pyco.observer import Subject
 
 class UniqueIdExtractor(object):
     '''
@@ -143,6 +143,7 @@ class AttributeStateError(Exception):
     Exception returned if an Attribute is required his
     state before it has been set
     '''
+    pass
 
 
 

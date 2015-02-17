@@ -1,6 +1,6 @@
 import pytest
 
-from cool.parser.parser import Parser, GeneralError
+from pyco.parser.parser import Parser, GeneralError
 
 @pytest.fixture(scope = 'session')
 def parser():
@@ -47,7 +47,7 @@ def test_str_formula(string_formula, parser):
         formula = parser.parse(string_formula)
     except Exception as error:
         print 'here %s' % error
-        assert False 
+        assert False
     else:
         print formula.generate()
         assert True
