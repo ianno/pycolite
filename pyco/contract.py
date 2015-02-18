@@ -3,7 +3,7 @@ Basic implementation of contract
 
 Author: Antonio Iannopollo
 '''
- 
+
 from pyco.parser.parser import LTL_PARSER
 from pyco.parser.lexer import BaseSymbolSet
 from pyco.attribute import Attribute
@@ -362,9 +362,9 @@ class Contract(object):
 
         #If a strategy is not defined, uses Ltl3ba
         if strategy_obj is None:
-            strategy_obj = Ltl3baRefinementStrategy(self)
+            strategy_obj = Ltl3baRefinementStrategy(self, delete_files=False)
 
-        return strategy_obj.check_refinement(abstract_contract, delete_files=False)
+        return strategy_obj.check_refinement(abstract_contract)
 
     def is_consistent(self, strategy_obj=None):
         '''
@@ -375,9 +375,9 @@ class Contract(object):
         guarantee formula is not an empty formula
         '''
         if strategy_obj is None:
-            strategy_obj = Ltl3baConsistencyStrategy(self)
+            strategy_obj = Ltl3baConsistencyStrategy(self, delete_files=False)
 
-        return strategy_obj.check_consistency(delete_files=False)
+        return strategy_obj.check_consistency()
 
     def is_compatible(self, strategy_obj=None):
         '''
@@ -388,9 +388,9 @@ class Contract(object):
         '''
 
         if strategy_obj is None:
-            strategy_obj = Ltl3baCompatibilityStrategy(self)
+            strategy_obj = Ltl3baCompatibilityStrategy(self, delete_files=False)
 
-        return strategy_obj.check_compatibility(delete_files=False)
+        return strategy_obj.check_compatibility()
 
     def __str__(self):
         '''

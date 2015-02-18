@@ -10,16 +10,48 @@ from tempfile import NamedTemporaryFile
 from subprocess import check_output
 from pyco.formula import Negation, Implication
 from pyco.symbol_sets import Ltl3baSymbolSet
+from ConfigParser import SafeConfigParser
+from pyco.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, LTL3BA_OPT
+import os
 
 import logging
 LOG = logging.getLogger()
 
-TEMP_FILES_PATH = 'resources/temp/'
-LTL3BA_PATH = 'resources/ltl3ba/'
+TEMP_FILES_PATH = '/tmp/'
+#LTL3BA_PATH = 'resources/ltl3ba/'
 LTL3BA_FALSE = 'T0_init:\n\tfalse;\n}\n'
 
-def verify_tautology(formula, prefix='', tool_location=LTL3BA_PATH, \
-                                exec_name='ltl3ba', delete_file=True):
+class Ltl3baPathLoader(object):
+    '''
+    Loads ltl3ba path from config file the first time
+    it is called,
+    '''
+    ltl3ba_path = None
+
+    @classmethod
+    def get_path(cls):
+        '''
+        gets the path
+        '''
+        if cls.ltl3ba_path is None:
+
+            here = os.path.abspath(os.path.dirname(__file__))
+
+            config_path = os.path.join(here, os.pardir, CONFIG_FILE_RELATIVE_PATH)
+
+            config = SafeConfigParser()
+            filep = open(config_path)
+
+            config.readfp(filep)
+
+            cls.ltl3ba_path = config.get(TOOL_SECT, LTL3BA_OPT)
+
+        return cls.ltl3ba_path
+
+
+def verify_tautology(formula, prefix='',
+                     tool_location=Ltl3baPathLoader.get_path(),
+                     delete_file=True):
     '''
     Verifies if a LTLFormula object represents a tautology
     '''
@@ -29,10 +61,11 @@ def verify_tautology(formula, prefix='', tool_location=LTL3BA_PATH, \
     n_formula = Negation(formula)
 
     return is_empty_formula(n_formula, prefix=prefix, \
-            tool_location=tool_location, exec_name=exec_name, delete_file=delete_file)
+            tool_location=tool_location, delete_file=delete_file)
 
-def is_empty_formula(formula, prefix='', tool_location=LTL3BA_PATH, \
-                                exec_name='ltl3ba', delete_file=True):
+def is_empty_formula(formula, prefix='',
+                     tool_location=Ltl3baPathLoader.get_path(),
+                     delete_file=True):
     '''
     Verifies if a LTLFormula object represents an empty formula
     '''
@@ -41,8 +74,6 @@ def is_empty_formula(formula, prefix='', tool_location=LTL3BA_PATH, \
             prefix='%s' % prefix,
             dir=TEMP_FILES_PATH, suffix='.ltl', delete=delete_file)
 
-    ltl3ba_location = tool_location + exec_name
-
     with temp_file:
         formula_str = formula.generate(symbol_set=Ltl3baSymbolSet, \
                 ignore_precedence=True)
@@ -50,7 +81,7 @@ def is_empty_formula(formula, prefix='', tool_location=LTL3BA_PATH, \
         temp_file.write(formula_str)
         temp_file.seek(0)
 
-        output = check_output([ltl3ba_location, '-F', temp_file.name])
+        output = check_output([tool_location, '-F', temp_file.name])
 
         if output.endswith(LTL3BA_FALSE):
             return True
@@ -63,14 +94,13 @@ class Ltl3baContractInterface(object):
     Base class to interface a contract with ltl3ba
     '''
 
-    def __init__(self, contract, tool_location=LTL3BA_PATH, exec_name='ltl3ba'):
+    def __init__(self, contract, tool_location=Ltl3baPathLoader.get_path()):
         '''
         constructor. Loads the basic information on how to locate
         and launch the script
         '''
         self.contract = contract
         self.tool_location = tool_location
-        self.exec_name = exec_name
 
 
 class Ltl3baRefinementStrategy(Ltl3baContractInterface):
@@ -78,7 +108,15 @@ class Ltl3baRefinementStrategy(Ltl3baContractInterface):
     Interface with ltl3ba for refinement check
     '''
 
-    def check_refinement(self, abstract_contract, delete_files=True):
+    def __init__(self, contract, tool_location=Ltl3baPathLoader.get_path(), delete_files=True):
+        '''
+        override constructor
+        '''
+        self.delete_files = delete_files
+
+        super(Ltl3baRefinementStrategy, self).__init__(contract, tool_location)
+
+    def check_refinement(self, abstract_contract):
         '''
         Override of abstract method
         '''
@@ -92,15 +130,13 @@ class Ltl3baRefinementStrategy(Ltl3baContractInterface):
         output = verify_tautology(assumption_check_formula, \
                     prefix='%s_assumptions_ltl3ba_' % contract_name, \
                     tool_location=self.tool_location, \
-                    exec_name=self.exec_name, \
-                    delete_file=delete_files)
+                    delete_file=self.delete_files)
         if output:
             #check guarantees
             output = verify_tautology(guarantee_check_formula, \
                     prefix='%s_guarantees_ltl3ba_' % contract_name, \
                     tool_location=self.tool_location, \
-                    exec_name=self.exec_name, \
-                    delete_file=delete_files)
+                    delete_file=self.delete_files)
 
 
         return output
@@ -138,8 +174,16 @@ class Ltl3baCompatibilityStrategy(Ltl3baContractInterface):
     Defines an object used to check compatibility of a contract
     interfacing with ltl3ba
     '''
+    def __init__(self, contract, tool_location=Ltl3baPathLoader.get_path(), delete_files=True):
+        '''
+        override constructor
+        '''
+        self.delete_files = delete_files
 
-    def check_compatibility(self, delete_files=True):
+        super(Ltl3baCompatibilityStrategy, self).__init__(contract, tool_location)
+
+
+    def check_compatibility(self):
         '''
         Override from CompatibilityStrategy
         '''
@@ -149,8 +193,7 @@ class Ltl3baCompatibilityStrategy(Ltl3baContractInterface):
         return not is_empty_formula(self.contract.assume_formula, \
                 prefix='%s_compatibility_ltl3ba_' % contract_name, \
                 tool_location=self.tool_location, \
-                exec_name=self.exec_name, \
-                delete_file=delete_files)
+                delete_file=self.delete_files)
 
 
 CompatibilityStrategy.register(Ltl3baCompatibilityStrategy)
@@ -161,8 +204,15 @@ class Ltl3baConsistencyStrategy(Ltl3baContractInterface):
     Defines an object used to check consistency of a contract
     interfacing with ltl3ba
     '''
+    def __init__(self, contract, tool_location=Ltl3baPathLoader.get_path(), delete_files=True):
+        '''
+        override constructor
+        '''
+        self.delete_files = delete_files
 
-    def check_consistency(self, delete_files=True):
+        super(Ltl3baConsistencyStrategy, self).__init__(contract, tool_location)
+
+    def check_consistency(self):
         '''
         Override from ConsistencyStrategy
         '''
@@ -172,8 +222,7 @@ class Ltl3baConsistencyStrategy(Ltl3baContractInterface):
         return not is_empty_formula(self.contract.guarantee_formula, \
                 prefix='%s_consistency_ltl3ba_' % contract_name, \
                 tool_location=self.tool_location, \
-                exec_name=self.exec_name, \
-                delete_file=delete_files)
+                delete_file=self.delete_files)
 
 
 ConsistencyStrategy.register(Ltl3baConsistencyStrategy)
