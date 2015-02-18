@@ -1,22 +1,76 @@
-from setuptools import setup, find_packages  # Always prefer setuptools over distutils
-from codecs import open  # To use a consistent encoding
-from os import path
+'''
+Setup.py file adapted from
+https://github.com/pypa/sampleproject
+released under the MIT license
 
-here = path.abspath(path.dirname(__file__))
+Author: Antonio Iannopollo
+'''
+
+from setuptools import setup, find_packages  # Always prefer setuptools over distutils
+import os
+import pyco.util.util as util
+from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError, ParsingError
+import sys
+
+here = os.path.abspath(os.path.dirname(__file__))
+
+
+#load setup.cfg
+setup_cfg = SafeConfigParser()
+
+with open('setup.cfg') as filep:
+    try:
+        setup_cfg.readfp(filep)
+    except ParsingError:
+        print 'error parsing setup.cfg'
+        sys.exit(-1)
+
+try:
+    ltl3ba_path = setup_cfg.get(util.TOOL_SECT, util.LTL3BA_OPT)
+except (NoSectionError, NoOptionError):
+    print 'Error loading ltl3ba configuration info'
+    sys.exit(-1)
+
+ltl3ba_path = util.which(ltl3ba_path)
+
+if ltl3ba_path is None:
+    print 'Error, ltl3ba path is invalid'
+    sys.exit(-1)
+
+try:
+    temp_dir_path = setup_cfg.get(util.PATH_SECT, util.TEMP_OPT)
+except (NoSectionError, NoOptionError):
+    print 'Error loading temp dir configuration info'
+    sys.exit(-1)
+
+temp_dir_path = os.path.abspath(temp_dir_path)
+#make sure the directory exists
+if not os.path.exists(temp_dir_path):
+    print 'creating %s' % temp_dir_path
+    os.makedirs(temp_dir_path)
+
+#write internal config file
+config_path = os.path.join(here, util.CONFIG_FILE_RELATIVE_PATH)
+
+util.create_main_config_file(config_path, [util.TOOL_SECT,
+                                           util.PATH_SECT],
+                             {util.TOOL_SECT: (util.LTL3BA_OPT, ltl3ba_path),
+                              util.PATH_SECT: (util.TEMP_OPT, temp_dir_path)
+                             })
 
 # Get the long description from the relevant file
-with open(path.join(here, 'DESCRIPTION.md'), encoding='utf-8') as f:
+with open(os.path.join(here, 'DESCRIPTION.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='sample',
+    name='pyco',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.9.0',
+    version='0.9.0.dev1',
 
-    description='A library to manipulate Contracts (for Contract Based Design) in python',
+    description='A library to manipulate contracts (for Contract Based Design) in python',
     long_description=long_description,
 
     # The project's main homepage.
@@ -38,8 +92,9 @@ setup(
         'Development Status :: 3 - Alpha',
 
         # Indicate who your project is intended for
-        'Intended Audience :: Researchers',
-        'Topic :: System Design :: Contract Based Design',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering',
 
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
@@ -50,11 +105,11 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='system contract based design',
+    keywords='system contract based design platform',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
+    packages=find_packages(exclude=['contrib', 'docs']),
 
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed. For an analysis of "install_requires" vs pip's
@@ -74,7 +129,6 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     package_data={
-        #'sample': ['package_data.dat'],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may
@@ -87,8 +141,5 @@ setup(
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
-        #'console_scripts': [
-        #    'sample=sample:main',
-        #],
     },
 )
