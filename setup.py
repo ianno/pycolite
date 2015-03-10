@@ -59,7 +59,7 @@ util.create_main_config_file(config_path, [util.TOOL_SECT,
                              })
 
 # Get the long description from the relevant file
-with open(os.path.join(here, 'DESCRIPTION.md'), encoding='utf-8') as f:
+with open(os.path.join(here, 'DESCRIPTION.md')) as f:
     long_description = f.read()
 
 setup(

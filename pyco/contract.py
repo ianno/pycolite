@@ -236,6 +236,12 @@ class Contract(object):
                 raise PortMappingError(key)
 
 
+        #Initialize a dict in which there is a reference to all the contracts
+        #used to obtain this contract through composition.
+        #The dict is inializated as empty
+        self.origin_contracts = {}
+
+
     def copy(self):
         '''
         create a copy, with new disconnected ports, of the current contract
@@ -332,8 +338,15 @@ class Contract(object):
         new_assumptions = Disjunction(and_of_assumptions, neg_guarantees, \
                 merge_literals=False)
 
-        return Contract(new_name, new_inputs, new_outputs, new_assumptions, \
-                new_guarantees, self.symbol_set_cls, self.context)
+        new_contract = Contract(new_name, new_inputs, new_outputs, new_assumptions,
+                                new_guarantees, self.symbol_set_cls, self.context)
+
+        #add the two contracts as source contracts
+        new_contract.origin_contracts[self.name_attribute.unique_name] = self
+        new_contract.origin_contracts[other_contract.name_attribute.unique_name] = other_contract
+
+
+        return new_contract
 
     def connect_to_port(self, port_name, other_contract, other_port_name):
         '''
@@ -405,13 +418,13 @@ class Contract(object):
         for base_name, port in self.input_ports_dict.items():
 
             description.append('\t\t%s ( %s )\n' % \
-                    (port.unique_name, base_name ) )
+                    (port.unique_name, base_name))
 
         description.append('\tOutput ports:\n')
 
         for base_name, port in self.output_ports_dict.items():
             description.append('\t\t%s ( %s )\n' % \
-                    (port.unique_name, base_name ) )
+                    (port.unique_name, base_name))
 
         description.append('\tAssumption\n')
         description.append('\t\t%s\n' % \
@@ -431,7 +444,7 @@ class Contract(object):
         '''
 
         if literal_name in self.input_ports_dict.viewkeys():
-            port_dict =  self.input_ports_dict
+            port_dict = self.input_ports_dict
         elif literal_name in self.output_ports_dict.viewkeys():
             port_dict = self.output_ports_dict
         else:
@@ -509,7 +522,48 @@ class Contract(object):
                 [literal.unique_name for literal in values], \
                     values)}
 
+    def non_composite_origin_set(self):
+        '''
+        Return the set of noncomposite origin contracts
+        '''
+        if self.origin_contracts == {}:
+            raise NonCompositeContractError()
 
+        origin_set = set()
+        look_list = self.origin_contracts.values()
+
+        for contract in look_list:
+            try:
+                #access the composite list of c.
+                #if c has no origin contracts, is what we are looking for.
+                #otherwise expand look_list
+                look_list += contract.origin_contracts.values()
+            except NonCompositeContractError:
+                origin_set.add(contract)
+
+        return origin_set
+
+    @property
+    def base_name(self):
+        '''
+        Returns contract base_name
+        '''
+        return self.name_attribute.base_name
+
+    @property
+    def unique_name(self):
+        '''
+        Returns contract unnique name
+        '''
+        return self.name_attribute.unique_name
+
+
+class NonCompositeContractError(Exception):
+    '''
+    Raised when accessing the origin_contract property
+    but contract is not obtained as a composition of others
+    '''
+    pass
 
 class PortDeclarationError(Exception):
     '''
