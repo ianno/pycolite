@@ -515,10 +515,15 @@ class Contract(object):
         '''
         #use the formulae instead of the dict because the dicts
         #overrides duplicates
-        _, values = zip(* (self.assume_formula.get_literal_items() | \
-                            self.guarantee_formula.get_literal_items()))
 
-        return {key: value for (key, value) in zip( \
+        try:
+            _, values = zip(* (self.assume_formula.get_literal_items() | \
+                            self.guarantee_formula.get_literal_items()))
+        except ValueError:
+            LOG.debug('no literals??')
+            return {}
+        else:
+            return {key: value for (key, value) in zip( \
                 [literal.unique_name for literal in values], \
                     values)}
 
