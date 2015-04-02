@@ -284,25 +284,21 @@ class Contract(object):
         #ports
         #we populate the new port list with all the ports from the composed
         #contracts, naming them merging the source contract and the port
-        new_inputs = {'%s_%s' % \
-            (self.name_attribute.unique_name, base_name): Port('%s_%s' % \
-            (self.name_attribute.unique_name, base_name), literal=port.literal, context=self.context) \
+        new_inputs = {self.port_composition_name(base_name): Port(self.port_composition_name(base_name),
+            literal=port.literal, context=self.context) \
             for (base_name, port) in self.input_ports_dict.items()}
         #update with the other_contract ports
-        new_inputs.update({'%s_%s' % \
-            (other_contract.name_attribute.unique_name, base_name): Port('%s_%s' % \
-            (self.name_attribute.unique_name, base_name), literal=port.literal, context=self.context) \
+        new_inputs.update({other_contract.port_composition_name(base_name): Port(other_contract.port_composition_name(base_name),
+            literal=port.literal, context=self.context) \
             for (base_name, port) in other_contract.input_ports_dict.items()})
 
         #and outputs
-        new_outputs = {'%s_%s' % \
-            (self.name_attribute.unique_name, base_name): Port('%s_%s' % \
-            (self.name_attribute.unique_name, base_name), literal=port.literal, context=self.context) \
+        new_outputs = {self.port_composition_name(base_name): Port(self.port_composition_name(base_name),
+            literal=port.literal, context=self.context) \
             for (base_name, port) in self.output_ports_dict.items()}
         #update with the other_contract ports
-        new_outputs.update({'%s_%s' % \
-            (other_contract.name_attribute.unique_name, base_name): Port('%s_%s' % \
-            (self.name_attribute.unique_name, base_name), literal=port.literal, context=self.context) \
+        new_outputs.update({other_contract.port_composition_name(base_name): Port(other_contract.port_composition_name(base_name),
+            literal=port.literal, context=self.context) \
             for (base_name, port) in other_contract.output_ports_dict.items()})
 
 
@@ -457,6 +453,16 @@ class Contract(object):
             raise KeyError('port not defined for literal %s' % literal_name)
 
         return port_dict
+
+    def port_composition_name(self, port_base_name):
+        '''
+        Returns port base_name after compositon.
+        This is useful to track ports names in complex composition schemes
+        '''
+        if port_base_name not in self.port_names:
+            raise PortNotFoundError()
+
+        return '%s_%s' % (self.name_attribute.unique_name, port_base_name)
 
     @property
     def port_names(self):
