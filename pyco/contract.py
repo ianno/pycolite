@@ -76,6 +76,8 @@ class Port(Observer):
         '''
         self.literal.merge(port.literal)
 
+        return self
+
 
     @property
     def unique_name(self):
@@ -283,20 +285,24 @@ class Contract(object):
         #we populate the new port list with all the ports from the composed
         #contracts, naming them merging the source contract and the port
         new_inputs = {'%s_%s' % \
-            (self.name_attribute.unique_name, base_name): port \
+            (self.name_attribute.unique_name, base_name): Port('%s_%s' % \
+            (self.name_attribute.unique_name, base_name), literal=port.literal, context=self.context) \
             for (base_name, port) in self.input_ports_dict.items()}
         #update with the other_contract ports
         new_inputs.update({'%s_%s' % \
-            (other_contract.name_attribute.unique_name, base_name): port \
+            (other_contract.name_attribute.unique_name, base_name): Port('%s_%s' % \
+            (self.name_attribute.unique_name, base_name), literal=port.literal, context=self.context) \
             for (base_name, port) in other_contract.input_ports_dict.items()})
 
         #and outputs
         new_outputs = {'%s_%s' % \
-            (self.name_attribute.unique_name, base_name): port \
+            (self.name_attribute.unique_name, base_name): Port('%s_%s' % \
+            (self.name_attribute.unique_name, base_name), literal=port.literal, context=self.context) \
             for (base_name, port) in self.output_ports_dict.items()}
         #update with the other_contract ports
         new_outputs.update({'%s_%s' % \
-            (other_contract.name_attribute.unique_name, base_name): port \
+            (other_contract.name_attribute.unique_name, base_name): Port('%s_%s' % \
+            (self.name_attribute.unique_name, base_name), literal=port.literal, context=self.context) \
             for (base_name, port) in other_contract.output_ports_dict.items()})
 
 
