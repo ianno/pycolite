@@ -308,20 +308,15 @@ class Contract(object):
             #input/input, we need to remove one input in the new contract
             if (port_name in self.input_ports_dict) and \
                     (other_port_name in other_contract.input_ports_dict):
-                del new_inputs['%s_%s' % \
-                    (other_contract.name_attribute.unique_name, \
-                        other_port_name)]
+                del new_inputs[other_contract.port_composition_name(other_port_name)]
             #input/output becomes a output
             elif (port_name in self.input_ports_dict) and \
                     (other_port_name in other_contract.output_ports_dict):
-                del new_inputs['%s_%s' % \
-                    (self.name_attribute.unique_name, port_name)]
+                del new_inputs[self.port_composition_name(port_name)]
             #output/input
             elif (port_name in self.output_ports_dict) and \
                     (other_port_name in other_contract.input_ports_dict):
-                del new_inputs['%s_%s' % \
-                    (other_contract.name_attribute.unique_name, \
-                        other_port_name)]
+                del new_inputs[other_contract.port_composition_name(other_port_name)]
             #output/output
             #if ((port_name in self.output_ports_dict) and \
             #        (other_port_name in other_contract.output_ports_dict)):
@@ -459,10 +454,14 @@ class Contract(object):
         Returns port base_name after compositon.
         This is useful to track ports names in complex composition schemes
         '''
-        if port_base_name not in self.port_names:
-            raise PortNotFoundError()
+        #if port_base_name not in self.port_names:
+        #    raise PortNotFoundError()
 
+        #
         return '%s_%s' % (self.name_attribute.unique_name, port_base_name)
+
+        #TODO: if this doesn't change, remove this method
+        #return port_base_name
 
     @property
     def port_names(self):
@@ -574,6 +573,13 @@ class Contract(object):
         '''
         return self.name_attribute.unique_name
 
+
+class DuplicatePortNameError(Exception):
+    '''
+    Raised when composing two contracts with same port name but
+    those ports are not connected
+    '''
+    pass
 
 class NonCompositeContractError(Exception):
     '''
