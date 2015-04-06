@@ -24,7 +24,7 @@ class Port(Observer):
     keeps constant its base name
     '''
 
-    def __init__(self, base_name, literal=None, context=None):
+    def __init__(self, bound_contract, base_name, literal=None, context=None):
         '''
         Creates a new port and associates a literal.
         If no literal is provided, a new one will be created.
@@ -39,8 +39,8 @@ class Port(Observer):
         :type context: object
         '''
 
-
-        self.base_name = base_name
+        self.bound_contract = bound_contract
+        self.base_name = bound_contract.port_bounded_name(base_name)
         self.context = context
 
         if literal is None:
@@ -173,7 +173,7 @@ class Contract(object):
         #literals in the formula
         except AttributeError:
             input_ports = set(input_ports)
-            self.input_ports_dict = {key : None for key in input_ports}
+            self.input_ports_dict = {self.port_bounded_name(key) : None for key in input_ports}
         #and outputs
         try:
             self.output_ports_dict = \
@@ -182,26 +182,27 @@ class Contract(object):
         #literals in the formula
         except AttributeError:
             output_ports = set(output_ports)
-            self.output_ports_dict = {key : None for key in output_ports}
+            self.output_ports_dict = {self.port_bounded_name(key) : None for key in output_ports}
 
         #try process input and outport ports
         #if a port is associated with None, a literal will be searched
         #in formulae, otherwise a new Port is created
-        for literal_name in self.ports_dict.viewkeys():
+        for port_name in self.ports_dict.viewkeys():
+            literal_name = self.unbound_port_name(port_name)
             #port lookup looks for the correct dictionary
-            port_dict = self.port_lookup(literal_name)
+            port_dict = self.port_lookup(port_name)
 
-            if port_dict[literal_name] is None:
+            if port_dict[port_name] is None:
                 #try to associate by base_name
                 if literal_name in self.formulae_dict:
-                    port_dict[literal_name] = \
-                        Port(literal_name, literal=\
+                    port_dict[port_name] = \
+                        Port(self, literal_name, literal=\
                         self.formulae_dict[literal_name], \
                         context=self.context)
                 #otherwise create new Port
                 else:
-                    port_dict[literal_name] = \
-                        Port(literal_name, context=self.context)
+                    port_dict[port_name] = \
+                        Port(self, literal_name, context=self.context)
 
             ##observer pattern - attach to the subject
             #port_dict[literal_name].attach(self)
@@ -233,7 +234,7 @@ class Contract(object):
 
             literal = self.formulae_reverse_dict[key]
             try:
-                literal.merge(self.ports_dict[literal.base_name].literal)
+                literal.merge(self.ports_dict[self.port_bounded_name(literal.base_name)].literal)
             except KeyError:
                 raise PortMappingError(key)
 
@@ -284,20 +285,20 @@ class Contract(object):
         #ports
         #we populate the new port list with all the ports from the composed
         #contracts, naming them merging the source contract and the port
-        new_inputs = {self.port_composition_name(base_name): Port(self.port_composition_name(base_name),
+        new_inputs = {self.port_bounded_name(base_name): Port(self, base_name,
             literal=port.literal, context=self.context) \
             for (base_name, port) in self.input_ports_dict.items()}
         #update with the other_contract ports
-        new_inputs.update({other_contract.port_composition_name(base_name): Port(other_contract.port_composition_name(base_name),
+        new_inputs.update({other_contract.port_bounded_name(base_name): Port(other_contract, base_name,
             literal=port.literal, context=self.context) \
             for (base_name, port) in other_contract.input_ports_dict.items()})
 
         #and outputs
-        new_outputs = {self.port_composition_name(base_name): Port(self.port_composition_name(base_name),
+        new_outputs = {self.port_bounded_name(base_name): Port(self, base_name,
             literal=port.literal, context=self.context) \
             for (base_name, port) in self.output_ports_dict.items()}
         #update with the other_contract ports
-        new_outputs.update({other_contract.port_composition_name(base_name): Port(other_contract.port_composition_name(base_name),
+        new_outputs.update({other_contract.port_bounded_name(base_name): Port(other_contract, base_name,
             literal=port.literal, context=self.context) \
             for (base_name, port) in other_contract.output_ports_dict.items()})
 
@@ -308,15 +309,15 @@ class Contract(object):
             #input/input, we need to remove one input in the new contract
             if (port_name in self.input_ports_dict) and \
                     (other_port_name in other_contract.input_ports_dict):
-                del new_inputs[other_contract.port_composition_name(other_port_name)]
+                del new_inputs[other_contract.port_bounded_name(other_port_name)]
             #input/output becomes a output
             elif (port_name in self.input_ports_dict) and \
                     (other_port_name in other_contract.output_ports_dict):
-                del new_inputs[self.port_composition_name(port_name)]
+                del new_inputs[self.port_bounded_name(port_name)]
             #output/input
             elif (port_name in self.output_ports_dict) and \
                     (other_port_name in other_contract.input_ports_dict):
-                del new_inputs[other_contract.port_composition_name(other_port_name)]
+                del new_inputs[other_contract.port_bounded_name(other_port_name)]
             #output/output
             #if ((port_name in self.output_ports_dict) and \
             #        (other_port_name in other_contract.output_ports_dict)):
@@ -357,8 +358,8 @@ class Contract(object):
         :param other_port_name: name of the port to be connected to
         :type other_port_name: string
         '''
-        port = self.ports_dict[port_name]
-        other_port = other_contract.ports_dict[other_port_name]
+        port = self.ports_dict[self.port_bounded_name(port_name)]
+        other_port = other_contract.ports_dict[other_contract.port_bounded_name(other_port_name)]
 
 
         port.merge(other_port)
@@ -449,7 +450,7 @@ class Contract(object):
 
         return port_dict
 
-    def port_composition_name(self, port_base_name):
+    def port_bounded_name(self, port_base_name):
         '''
         Returns port base_name after compositon.
         This is useful to track ports names in complex composition schemes
@@ -462,6 +463,17 @@ class Contract(object):
 
         #TODO: if this doesn't change, remove this method
         #return port_base_name
+
+    def unbound_port_name(self, bounded_name):
+        '''
+        returns literal base_name
+        '''
+        c_name = self.name_attribute.unique_name
+
+        if c_name != bounded_name[:len(c_name)]:
+            raise PortDeclarationError("port name doesn't match the contract")
+        stripped_name = bounded_name[len(c_name)+1:]
+        return stripped_name
 
     @property
     def port_names(self):
