@@ -24,7 +24,7 @@ class Port(Observer):
     keeps constant its base name
     '''
 
-    def __init__(self, base_name, literal=None, context=None):
+    def __init__(self, base_name, contract=None, literal=None, context=None):
         '''
         Creates a new port and associates a literal.
         If no literal is provided, a new one will be created.
@@ -42,6 +42,10 @@ class Port(Observer):
 
         self.base_name = base_name
         self.context = context
+
+        self._contract = None
+        #it's  property
+        self.contract = contract
 
         if literal is None:
             literal = Literal(base_name, context)
@@ -78,6 +82,35 @@ class Port(Observer):
 
         return self
 
+    def is_connected_to(self, port):
+        '''
+        Returns true if self references the same literal than port
+        '''
+        if self.unique_name == port.unique_name:
+            return True
+        else:
+            return False
+
+    @property
+    def contract(self):
+        '''
+        contract using the port
+        '''
+        return self._contract
+
+    @contract.setter
+    def contract(self, value):
+        '''
+        fails if assign multiple times
+        '''
+        if self._contract is not None:
+            raise PortDeclarationError('assigning port to contract multiple times')
+
+        #check the contract has this port
+        if value is not None and self not in value.ports_dict.viewvalues():
+            raise PortDeclarationError('contract does not contain this port')
+
+        self._contract = value
 
     @property
     def unique_name(self):
@@ -85,6 +118,28 @@ class Port(Observer):
         return unique_name associated to self.literal
         '''
         return self.literal.unique_name
+
+    @property
+    def is_input(self):
+        '''
+        Returns true if the port is a input of the connected contract
+        '''
+
+        if self.contract is None:
+            raise PortDeclarationError('port is not used by any contract')
+        else:
+            if self.base_name in self.contract.input_ports_dict:
+                return True
+            else:
+                return False
+
+    @property
+    def is_output(self):
+        '''
+        Returns True if the port is an output
+        '''
+        return not self.is_input
+
 
 
 
@@ -174,6 +229,10 @@ class Contract(object):
         except AttributeError:
             input_ports = set(input_ports)
             self.input_ports_dict = {key : None for key in input_ports}
+        else:
+            #register this contract as the port owner
+            for port in self.input_ports_dict.viewvalues():
+                port.contract = self
         #and outputs
         try:
             self.output_ports_dict = \
@@ -183,6 +242,10 @@ class Contract(object):
         except AttributeError:
             output_ports = set(output_ports)
             self.output_ports_dict = {key : None for key in output_ports}
+        else:
+            #register this contract as the port owner
+            for port in self.output_ports_dict.viewvalues():
+                port.contract = self
 
         #try process input and outport ports
         #if a port is associated with None, a literal will be searched
@@ -195,13 +258,13 @@ class Contract(object):
                 #try to associate by base_name
                 if literal_name in self.formulae_dict:
                     port_dict[literal_name] = \
-                        Port(literal_name, literal=\
+                        Port(literal_name, contract=self, literal=\
                         self.formulae_dict[literal_name], \
                         context=self.context)
                 #otherwise create new Port
                 else:
                     port_dict[literal_name] = \
-                        Port(literal_name, context=self.context)
+                        Port(literal_name, contract=self, context=self.context)
 
             ##observer pattern - attach to the subject
             #port_dict[literal_name].attach(self)
@@ -258,7 +321,7 @@ class Contract(object):
         return new_contract
 
 
-    def compose(self, other_contract, new_name=None, connection_list=None):
+    def compose(self, other_contract, new_name=None, composition_mapping=None):
         '''
         Compose the current contract with the one passed as a parameter.
         The operations to be done are: merge the literals, and merge the
@@ -274,8 +337,8 @@ class Contract(object):
         :type connection_list: list of tuples (pairs)
         '''
 
-        if connection_list is None:
-            connection_list = []
+        if composition_mapping is None:
+            composition_mapping = CompositionMapping(self, other_contract, self.context)
         if new_name is None:
             new_name = '%s-x-%s' % (self.name_attribute.base_name, \
                     other_contract.name_attribute.base_name)
@@ -306,10 +369,12 @@ class Contract(object):
             for (base_name, port) in other_contract.output_ports_dict.items()})
 
 
-        for (port_name, other_port_name) in connection_list:
-            self.connect_to_port(port_name, other_contract, other_port_name)
+        for (port, other_port) in connection_list:
+            self.connect_to_port(port, other_port)
             #process ports
             #input/input, we need to remove one input in the new contract
+            port_name = port.base_name
+            other_port_name = other_port.base_name
             if (port_name in self.input_ports_dict) and \
                     (other_port_name in other_contract.input_ports_dict):
                 del new_inputs['%s_%s' % \
@@ -354,7 +419,7 @@ class Contract(object):
 
         return new_contract
 
-    def connect_to_port(self, port_name, other_contract, other_port_name):
+    def connect_to_port(self, port_ref, other_port_ref):
         '''
         Connect a port of the current contract with a port of another contract.
         Here it is allowed connecting two output ports.
@@ -366,11 +431,11 @@ class Contract(object):
         :param other_port_name: name of the port to be connected to
         :type other_port_name: string
         '''
-        port = self.ports_dict[port_name]
-        other_port = other_contract.ports_dict[other_port_name]
-
-
-        port.merge(other_port)
+        #merge only if the contract is the rightful owner of the port
+        if port_ref.contract is self:
+            port_ref.merge(other_port_ref)
+        else:
+            raise PortDeclarationError()
 
     def is_refinement(self, abstract_contract, strategy_obj=None):
         '''
@@ -457,6 +522,20 @@ class Contract(object):
             raise KeyError('port not defined for literal %s' % literal_name)
 
         return port_dict
+
+
+    def __getattr__(self, port_name):
+        '''
+        Checks if port_name is in ports_dict and consider it as a Contract attribute.
+        IF it is present, returns the
+        requested port, otherwise raises a AttributeError exception
+        '''
+
+        if port_name in self.ports_dict:
+            return self.ports_dict[port_name]
+        else:
+            raise AttributeError
+
 
     @property
     def port_names(self):
@@ -567,6 +646,212 @@ class Contract(object):
         Returns contract unnique name
         '''
         return self.name_attribute.unique_name
+
+
+
+#class PortMapping(object):
+#    '''
+#    Encapsulate the information needed to remap a set of ports
+#    to another
+#    '''
+#
+#    def __init__(self):
+#        '''
+#        init operations
+#        '''
+#        self.mapping = set()
+#
+#    def add(self, port, other_port):
+#        '''
+#        basic method to add constraints
+#        '''
+#        self.mapping.add((port, other_port))
+
+
+class CompositionMapping(object):
+    '''
+    Collects the information abou port mapping during a contract composition.
+    During composition, it may happen that two original contracts have ports
+    with the same name.
+    This class helps defining explicit relations between ports before and after
+    composition
+    '''
+
+    def __init__(self, contract, other_contract, context=None):
+        '''
+        Init port mapping
+        '''
+        self.mapping = {}
+        self.context = context
+        self.contract = contract
+        self.other_contract = other_contract
+
+    def _validate_port(self, port):
+        '''
+        raises an exception if port is not related to one of the mapped contract
+        '''
+        if (port.contract is not self.contract) or (port.contract is not self.other_contract):
+            raise PortMappingError()
+
+    def add(self, port, mapped_base_name):
+        '''
+        Add the new constraint
+        '''
+        self._validate_port(port)
+        try:
+            self.mapping[mapped_base_name] = port
+        except KeyError:
+            self.mapping[mapped_base_name] = set()
+
+    def connect(self, port, other_port, mapped_name=None):
+        '''
+        Connects two ports.
+        It means that the ports will be connected to the same
+        new port
+        '''
+        self._validate_port(port)
+        self._validate_port(other_port)
+
+        if mapped_name is None:
+            mapped_name = port.base_name
+
+        self.mapping[mapped_name].add(port)
+        self.mapping[mapped_name].add(other_port)
+
+    def find_conflicts(self):
+        '''
+        detects possible name conflicts
+        '''
+        #find ports with same name
+        #assuming that there are no ports with the same name in the same contract
+        #this means that at most 2 ports have the same name
+
+        #all_ports_pool = dict(self.contract.ports_dict.viewitems() +
+        #                      self.other_contract.ports_dict.viewitem())
+
+        cross_diff_1 = (self.contract.input_ports_dict.viewkeys() &
+                        self.other_contract.output_ports_dict.viewkeys())
+        cross_diff_2 = (self.contract.output_ports_dict.viewkeys() &
+                        self.other_contract.input_ports_dict.viewkeys())
+        input_diff = (self.contract.input_ports_dict.viewkeys() &
+                      self.other_contract.input_ports_dict.viewkeys())
+        output_diff = (self.contract.output_ports_dict.viewkeys() &
+                       self.other_contract.output_ports_dict.viewkeys())
+
+        total_diff = cross_diff_1 | cross_diff_2 | input_diff | output_diff
+        conflict_ports_1 = {name: self.contract.ports_dict[name] for name in total_diff}
+        conflict_ports_2 = {name: self.other_contract.ports_dict[name] for name in total_diff}
+
+        #reverse_map = self.reverse_mapping
+
+        #for name in total_diff:
+        #    port_1 = conflict_ports_1[name]
+        #    port_2 = conflict_ports_2[name]
+        #    #conflicting names not in the mapping set
+        #    if (port_1 not in reverse_map) and (port_2 not in reverse_map):
+        #        raise PortMappingError()
+        #    else:
+        #        #at least one in mapping, we can work on it
+        #        if ((port_1 in reverse_map) and
+        #            (reverse_map[port_1] != name) and
+        #            (name not in self.mapping)):
+        #        #add port_2 to mapping with its own name
+        #            self.add(port_2, name)
+        #        elif ((port_2 in reverse_map) and
+        #            (reverse_map[port_2] != name) and
+        #            (name not in self.mapping)):
+        #            self.add(port_1, name)
+        #        else:
+        #            raise PortMappingError()
+
+        return [(conflict_ports_1[name], conflict_ports_2[name]) for name in total_diff]
+
+
+
+    def define_composed_contract_ports(self):
+        '''
+        Identifies and defines the input and output ports of the composed
+        contract.
+        Raises an exception in case of conflicts.
+        Ports mapped on the same port will be connected.
+        In case of missing mapping, this method will try to automatically
+        derive new contract ports in case of no conflict.
+        '''
+
+        new_input_ports = {}
+        new_output_ports = {}
+
+        #associate new var for performance (reverse_mapping is computed each time)
+        reverse_map = self.reverse_mapping
+
+        #returns a set of tuples
+        conflict_set = self.find_conflicts()
+
+        for (port, other_port) in conflict_set:
+
+            if not (port in reverse_map and other_port in reverse_map):
+                #this means a conflict is not explicitely solved
+                raise PortMappingError()
+
+        #connect and check port consistency
+        for name, port_set in self.mapping:
+
+            #we need to connects all the ports in port_set
+            #error if we try to connect mulptiple outputs
+
+            outputs = [port for port in port_set if port.is_output]
+
+            if len(outputs) > 1:
+                raise PortConnectionError('cannot connect multiple outputs')
+            else:
+                #merge port literals
+                port = reduce(lambda x, y: x.merge(y), port_set)
+
+                if len(outputs) == 0:
+                    #all inputs -> input
+                    new_input_ports[name] = Port(name, literal=port.literal, context=self.context)
+                else:
+                    #1 output -> output
+                    new_output_ports[name] = Port(name, literal=port.leteral, context=self.context)
+
+
+        #complete with implicit ports from contracts
+        #we have disjoint ports or ports which have been previously connected
+        #however we are sure, from the previous step, that there are not conflicting
+        #port names
+        input_pool = dict(self.contract.input_ports_dict.viewitems() |
+                          self.other_contract.input_ports_dict.viewitems())
+        output_pool = dict(self.contract.output_ports_dict.viewitems() |
+                           self.other_contract.output_ports_dict.viewitems())
+
+        implicit_inputs_names = ((self.contract.input_ports_dict.viewkeys() |
+                                  self.other_contract.input_ports_dict.viewkeys()) -
+                                 self.mapping.viewkeys())
+        implicit_output_names = ((self.contract.output_ports_dict.viewkeys() |
+                                  self.other_contract.output_ports_dict.viewkeys()) -
+                                 self.mapping.viewkeys())
+
+        filtered_inputs = implicit_inputs_names - implicit_output_names
+
+        for name in filtered_inputs:
+            #also, check for feedback loops and do not add inputs in case
+            if not any([input_pool[name].is_connected(port) for port in output_pool.viewvalues()]):
+                new_input_ports[name] = Port(name, literal=input_pool[name].literal,
+                                             context=self.context)
+        for name in implicit_output_names:
+            new_output_ports[name] = Port(name, literal=output_pool[name].literal,
+                                          context=self.context)
+
+
+        return (new_input_ports, new_output_ports)
+
+
+    @property
+    def reverse_mapping(self):
+        '''
+        Returns a dictionary with port as key and mapped name as value
+        '''
+        return {port: name for port in port_set for (name, port_set) in self.mapping.viewitems()}
 
 
 class NonCompositeContractError(Exception):
