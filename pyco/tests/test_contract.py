@@ -6,7 +6,7 @@ author: Antonio Iannopollo
 
 import pytest
 from pyco.contract import Contract, PortDeclarationError, PortMappingError, \
-                        PortConnectionError
+                        PortConnectionError, CompositionMapping
 
 @pytest.fixture()
 def basic_params():
@@ -80,8 +80,14 @@ def c1_compose_c2(contract_1, contract_2):
     '''
     returns a composition of c1 and c2
     '''
-    return contract_1.compose(contract_2, connection_list=\
-                              (('a', 'g'), ('b', 'b')))
+    composition_mapping = CompositionMapping(contract_1, contract_2)
+    composition_mapping.connect(contract_1.a, contract_2.g)
+    composition_mapping.connect(contract_1.b, contract_2.b)
+    composition_mapping.add(contract_1.c, 'c1')
+    composition_mapping.add(contract_2.c, 'c2')
+    composition_mapping.add(contract_1.e, 'e1')
+    composition_mapping.add(contract_2.e, 'e2')
+    return contract_1.compose(contract_2, composition_mapping=composition_mapping)
 
 
 
@@ -136,6 +142,14 @@ def test_print(basic_params):
     print contract2
     assert True
 
+def test_composition_no_common_err(contract_1, contract_2):
+    '''
+    test composition of two contracts
+    '''
+    with pytest.raises(PortMappingError):
+        contract_3 = contract_1.compose(contract_2)
+
+
 def test_composition_no_common(contract_1, contract_2):
     '''
     test composition of two contracts
@@ -145,7 +159,15 @@ def test_composition_no_common(contract_1, contract_2):
     print contract_1
     print contract_2
 
-    contract_3 = contract_1.compose(contract_2)
+    composition_mapping = CompositionMapping(contract_1, contract_2)
+    composition_mapping.add(contract_1.c, 'c1')
+    composition_mapping.add(contract_2.c, 'c2')
+    composition_mapping.add(contract_1.e, 'e1')
+    composition_mapping.add(contract_2.e, 'e2')
+    composition_mapping.add(contract_2.b, 'b2')
+
+
+    contract_3 = contract_1.compose(contract_2, composition_mapping=composition_mapping)
 
     print contract_3
 
@@ -174,8 +196,16 @@ def test_composition(contract_1, contract_2):
     print contract_1
     print contract_2
 
-    contract_3 = contract_1.compose(contract_2, connection_list = \
-            (('a', 'g'), ('b', 'b')))
+    composition_mapping = CompositionMapping(contract_1, contract_2)
+    composition_mapping.connect(contract_1.a, contract_2.g)
+    composition_mapping.connect(contract_1.b, contract_2.b)
+    composition_mapping.add(contract_1.c, 'c1')
+    composition_mapping.add(contract_2.c, 'c2')
+    composition_mapping.add(contract_1.e, 'e1')
+    composition_mapping.add(contract_2.e, 'e2')
+
+
+    contract_3 = contract_1.compose(contract_2, composition_mapping = composition_mapping)
 
     print contract_3
 
@@ -214,8 +244,14 @@ def test_out_to_out(contract_1, contract_2):
     '''
 
     with pytest.raises(PortConnectionError):
-         contract_3 = contract_1.compose(contract_2, connection_list = \
-            [('e', 'g')])
+        composition_mapping = CompositionMapping(contract_1, contract_2)
+        composition_mapping.connect(contract_1.e, contract_2.g)
+        composition_mapping.add(contract_1.c, 'c1')
+        composition_mapping.add(contract_2.c, 'c2')
+        composition_mapping.add(contract_2.e, 'e2')
+        composition_mapping.add(contract_1.b, 'b1')
+
+        contract_3 = contract_1.compose(contract_2, composition_mapping=composition_mapping)
 
 
 def test_copy(contract_1, contract_2):
@@ -231,8 +267,15 @@ def test_copy(contract_1, contract_2):
     print 'copy:'
     print c1c
 
-    contract_3 = c1c.compose(contract_2, connection_list = \
-            (('a', 'g'), ('b', 'b')))
+    composition_mapping = CompositionMapping(c1c, contract_2)
+    composition_mapping.connect(c1c.a, contract_2.g)
+    composition_mapping.connect(c1c.b, contract_2.b)
+    composition_mapping.add(c1c.c, 'c1')
+    composition_mapping.add(c1c.c, 'c2')
+    composition_mapping.add(c1c.e, 'e1')
+    composition_mapping.add(c1c.e, 'e2')
+
+    contract_3 = c1c.compose(contract_2, composition_mapping=composition_mapping)
 
     print contract_3
     c3c = contract_3.copy()
