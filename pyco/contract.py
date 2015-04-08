@@ -91,6 +91,14 @@ class Port(Observer):
         else:
             return False
 
+    def reinitialize(self):
+        '''
+        Generate a new unique _name and propagates it
+        '''
+        new_literal = Literal(self.base_name, self.context)
+        self.literal.merge(new_literal)
+
+
     @property
     def contract(self):
         '''
@@ -313,10 +321,14 @@ class Contract(object):
         '''
 
         new_contract = deepcopy(self)
-        new_contract.assume_formula.reinitialize()
-        new_contract.guarantee_formula.reinitialize()
+        #new_contract.assume_formula.reinitialize()
+        #new_contract.guarantee_formula.reinitialize()
         new_contract.name_attribute = \
                 Attribute(self.name_attribute.base_name, self.context)
+
+        #reinitialize contract Ports
+        for port in new_contract.ports_dict.values():
+            port.reinitialize()
 
         return new_contract
 
