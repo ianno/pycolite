@@ -13,6 +13,7 @@ from copy import deepcopy
 from pyco.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
                          Ltl3baConsistencyStrategy)
 import logging
+from abc import ABCMeta, abstractmethod
 
 LOG = logging.getLogger()
 
@@ -318,6 +319,7 @@ class Contract(object):
     def copy(self):
         '''
         create a copy, with new disconnected ports, of the current contract
+        Preserves feedback loops
         '''
 
         new_contract = deepcopy(self)
@@ -612,24 +614,27 @@ class Contract(object):
 
 
 
-#class PortMapping(object):
-#    '''
-#    Encapsulate the information needed to remap a set of ports
-#    to another
-#    '''
-#
-#    def __init__(self):
-#        '''
-#        init operations
-#        '''
-#        self.mapping = set()
-#
-#    def add(self, port, other_port):
-#        '''
-#        basic method to add constraints
-#        '''
-#        self.mapping.add((port, other_port))
+class PortMapping:
+    '''
+    Encapsulate the information needed to remap a set of ports
+    to another
+    '''
 
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def _validate_port(self, port):
+        '''
+        validate port. It is good practise to always provide a validation procedure
+        '''
+        raise NotImplementedError()
+
+    @abstractmethod
+    def add(self, port, other_port):
+        '''
+        basic method to add constraints
+        '''
+        raise NotImplementedError()
 
 class CompositionMapping(object):
     '''
@@ -824,6 +829,7 @@ class CompositionMapping(object):
         #LOG.debug(self.mapping.viewitems())
         return {port: name for (name, port_set) in self.mapping.viewitems() for port in port_set}
 
+PortMapping.register(CompositionMapping)
 
 class NonCompositeContractError(Exception):
     '''
