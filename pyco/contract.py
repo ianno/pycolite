@@ -622,6 +622,12 @@ class PortMapping:
 
     __metaclass__ = ABCMeta
 
+    def __init__(self):
+        '''
+        cannot instantiate an abstract PortMapping
+        '''
+        raise NotImplementedError()
+
     @abstractmethod
     def _validate_port(self, port):
         '''
