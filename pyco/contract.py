@@ -727,14 +727,14 @@ class CompositionMapping(object):
             if (port_1 not in reverse_map) or (port_2 not in reverse_map):
                 #at least one in mapping, we can work on it
                 if ((port_1 in reverse_map) and
-                    (reverse_map[port_1] != name) and
-                    (name not in self.mapping)):
+                        (reverse_map[port_1] != name) and
+                        (name not in self.mapping)):
                 #add port_2 to mapping with its own name
                     self.add(port_2, name)
                     fixed.add(name)
                 elif ((port_2 in reverse_map) and
-                    (reverse_map[port_2] != name) and
-                    (name not in self.mapping)):
+                      (reverse_map[port_2] != name) and
+                      (name not in self.mapping)):
                     self.add(port_1, name)
                     fixed.add(name)
                 else:
@@ -806,7 +806,7 @@ class CompositionMapping(object):
         mapped_ports = set([port.base_name for port in reverse_map.viewkeys()])
         LOG.debug(mapped_ports)
         implicit_input_names = ((self.contract.input_ports_dict.viewkeys() |
-                                  self.other_contract.input_ports_dict.viewkeys()) -
+                                self.other_contract.input_ports_dict.viewkeys()) -
                                  mapped_ports)
         implicit_output_names = ((self.contract.output_ports_dict.viewkeys() |
                                   self.other_contract.output_ports_dict.viewkeys()) -
