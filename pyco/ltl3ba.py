@@ -86,7 +86,7 @@ def is_empty_formula(formula, prefix='',
         if output.endswith(LTL3BA_FALSE):
             return True
         else:
-            LOG.debug(output)
+            #LOG.debug(output)
             return False
 
 class Ltl3baContractInterface(object):
@@ -133,6 +133,7 @@ class Ltl3baRefinementStrategy(Ltl3baContractInterface):
                     delete_file=self.delete_files)
         if output:
             #check guarantees
+            LOG.debug('assumptions are ok')
             output = verify_tautology(guarantee_check_formula, \
                     prefix='%s_guarantees_ltl3ba_' % contract_name, \
                     tool_location=self.tool_location, \

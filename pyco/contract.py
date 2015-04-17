@@ -190,6 +190,8 @@ class Contract(object):
         :param context: fomrula context for unique variable naming
         :type context: object
         '''
+        #TODO
+        #check for saturated formulas automatically
 
         self.symbol_set_cls = symbol_set_cls
         self.context = context
@@ -335,7 +337,7 @@ class Contract(object):
         return new_contract
 
 
-    def compose(self, other_contract, new_name=None, composition_mapping=None):
+    def compose(self, contract_list, new_name=None, composition_mapping=None):
         '''
         Compose the current contract with the one passed as a parameter.
         The operations to be done are: merge the literals, and merge the
@@ -351,38 +353,62 @@ class Contract(object):
         :type connection_list: list of tuples (pairs)
         '''
 
+        try:
+            contracts = set(contract_list)
+        except TypeError:
+            #in case it is a single contract without list
+            contracts = set()
+            contracts.add(contract_list)
+
+        contracts.add(self)
+
         if composition_mapping is None:
-            composition_mapping = CompositionMapping([self, other_contract], self.context)
+            composition_mapping = CompositionMapping(contracts, self.context)
         if new_name is None:
-            new_name = '%s-x-%s' % (self.name_attribute.base_name, \
-                    other_contract.name_attribute.base_name)
+            new_name = '-x-'.join([contract.name_attribute.base_name for contract in contracts])
 
         try:
             (new_inputs, new_outputs) = composition_mapping.define_composed_contract_ports()
         except PortMappingError:
             raise
         else:
-
-            and_of_assumptions = Conjunction(self.assume_formula, \
-                    other_contract.assume_formula, merge_literals=False)
-
-            new_guarantees = Conjunction(self.guarantee_formula, \
-                    other_contract.guarantee_formula, merge_literals=False)
-
-            neg_guarantees = Negation(new_guarantees)
-
-            new_assumptions = Disjunction(and_of_assumptions, neg_guarantees, \
-                    merge_literals=False)
-
+            all_pairs = [(contract.assume_formula, contract.guarantee_formula)
+                         for contract in contracts]
+            (new_assumptions, new_guarantees) = reduce(self._reduce_composition_formulae, all_pairs)
             new_contract = Contract(new_name, new_inputs, new_outputs, new_assumptions,
                                     new_guarantees, self.symbol_set_cls, self.context)
 
             #add the two contracts as source contracts
-            new_contract.origin_contracts[self.name_attribute.unique_name] = self
-            new_contract.origin_contracts[other_contract.name_attribute.unique_name] = other_contract
+            new_contract.origin_contracts = {contract.name_attribute.unique_name: contract for
+                                             contract in contracts}
 
 
             return new_contract
+
+
+    def _reduce_composition_formulae(self, ag_pair_a, ag_pair_b):
+        '''
+        get a new pair of formulae obtained by composing the input pairs
+        '''
+
+        assumption_a = ag_pair_a[0]
+        guarantee_a = ag_pair_a[1]
+
+        assumption_b = ag_pair_b[0]
+        guarantee_b = ag_pair_b[1]
+
+        and_of_assumptions = Conjunction(assumption_a, assumption_b, merge_literals=False)
+
+        new_guarantees = Conjunction(guarantee_a, guarantee_b, merge_literals=False)
+
+        neg_guarantees = Negation(new_guarantees)
+
+        new_assumptions = Disjunction(and_of_assumptions, neg_guarantees,
+                                      merge_literals=False)
+
+        return (new_assumptions, new_guarantees)
+
+
 
     def connect_to_port(self, port_ref, other_port_ref):
         '''

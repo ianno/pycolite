@@ -7,6 +7,10 @@ author: Antonio Iannopollo
 import pytest
 from pyco.contract import Contract, PortDeclarationError, PortMappingError, \
                         PortConnectionError, CompositionMapping
+import logging
+
+LOG = logging.getLogger()
+
 
 @pytest.fixture()
 def basic_params():
@@ -75,18 +79,48 @@ def fault_guarantee_contract():
 
     return Contract('Cf', input_p, output_p, assume, guarantee, saturated=False)
 
+
+@pytest.fixture
+def contract_next():
+    '''
+    Returns a contract that assumes true and guaratees Xb
+    '''
+
+    input_p = ['a']
+    output_p = ['b']
+    assume = 'true'
+    guarantee = 'Xb'
+
+    return Contract('X', input_p, output_p, assume, guarantee)
+
+
+@pytest.fixture
+def contract_future():
+    '''
+    Returns a contract that assumes true and guaratees Fb
+    '''
+
+    input_p = ['a']
+    output_p = ['b']
+    assume = 'true'
+    guarantee = 'Fb'
+
+    return Contract('X', input_p, output_p, assume, guarantee)
+
+
 @pytest.fixture()
 def c1_compose_c2(contract_1, contract_2):
     '''
     returns a composition of c1 and c2
     '''
     composition_mapping = CompositionMapping([contract_1, contract_2])
-    composition_mapping.connect(contract_1.a, contract_2.g)
-    composition_mapping.connect(contract_1.b, contract_2.b)
+    #composition_mapping.connect(contract_1.a, contract_2.g)
+    #composition_mapping.connect(contract_1.b, contract_2.b)
     composition_mapping.add(contract_1.c, 'c1')
     composition_mapping.add(contract_2.c, 'c2')
     composition_mapping.add(contract_1.e, 'e1')
     composition_mapping.add(contract_2.e, 'e2')
+    composition_mapping.add(contract_2.b, 'b2')
     return contract_1.compose(contract_2, composition_mapping=composition_mapping)
 
 
@@ -307,6 +341,24 @@ def test_self_refinement(contract_1):
     assert c_test
 
 
+def test_refinement(contract_next, contract_future):
+    '''
+    contract_next should refine contract_future
+    '''
+    contract_future.connect_to_port(contract_future.a, contract_next.a)
+    contract_future.connect_to_port(contract_future.b, contract_next.b)
+
+    assert contract_next.is_refinement(contract_future)
+
+def test_not_refinement(contract_next, contract_future):
+    '''
+    contract_future shouldn't refine contract_next
+    '''
+    contract_future.connect_to_port(contract_future.a, contract_next.a)
+    contract_future.connect_to_port(contract_future.b, contract_next.b)
+
+    assert not contract_future.is_refinement(contract_next)
+
 def test_compatible_ok(contract_1):
     '''
     Contract_1 should be compatible
@@ -344,3 +396,15 @@ def test_composition_consistent(c1_compose_c2):
     assert c1_compose_c2.is_consistent()
 
 
+def test_refinement_after_composition(c1_compose_c2, contract_1, contract_2):
+    '''
+    Composite contract should refine both origin contracts
+    '''
+
+    LOG.debug('test_refinement_after_composition')
+    LOG.debug(c1_compose_c2)
+    LOG.debug(contract_1)
+    LOG.debug(contract_2)
+
+    assert c1_compose_c2.is_refinement(contract_1)
+    #assert c1_compose_c2.is_refinement(contract_2)
