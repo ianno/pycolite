@@ -659,6 +659,7 @@ class CompositionMapping(object):
         self.context = context
         self.contract = contract
         self.other_contract = other_contract
+        self.contracts = (self.contract, self.other_contract)
 
     def _validate_port(self, port):
         '''
@@ -701,48 +702,40 @@ class CompositionMapping(object):
         #assuming that there are no ports with the same name in the same contract
         #this means that at most 2 ports have the same name
 
-        #all_ports_pool = dict(self.contract.ports_dict.viewitems() +
-        #                      self.other_contract.ports_dict.viewitem())
+        list_of_names = [key for contract in self.contracts for key in contract.ports_dict]
+        #take a name only if it is listed at least twice
+        all_multiple_ports = set([x for x in list_of_names if list_of_names.count(x) >= 2])
 
-        cross_diff_1 = (self.contract.input_ports_dict.viewkeys() &
-                        self.other_contract.output_ports_dict.viewkeys())
-        cross_diff_2 = (self.contract.output_ports_dict.viewkeys() &
-                        self.other_contract.input_ports_dict.viewkeys())
-        input_diff = (self.contract.input_ports_dict.viewkeys() &
-                      self.other_contract.input_ports_dict.viewkeys())
-        output_diff = (self.contract.output_ports_dict.viewkeys() &
-                       self.other_contract.output_ports_dict.viewkeys())
 
-        total_diff = cross_diff_1 | cross_diff_2 | input_diff | output_diff
-        conflict_ports_1 = {name: self.contract.ports_dict[name] for name in total_diff}
-        conflict_ports_2 = {name: self.other_contract.ports_dict[name] for name in total_diff}
+        conflict_ports = {name:
+                          [contract.ports_dict[name]
+                           for contract in self.contracts if name in contract.ports_dict]
+                          for name in all_multiple_ports}
 
         reverse_map = self.reverse_mapping
 
         fixed = set()
-        for name in total_diff:
-            port_1 = conflict_ports_1[name]
-            port_2 = conflict_ports_2[name]
+        for name in all_multiple_ports:
+            #ports with conflincting name
+            ports = conflict_ports[name]
             #conflicting names not in the mapping set
-            if (port_1 not in reverse_map) or (port_2 not in reverse_map):
-                #at least one in mapping, we can work on it
-                if ((port_1 in reverse_map) and
-                        (reverse_map[port_1] != name) and
-                        (name not in self.mapping)):
-                #add port_2 to mapping with its own name
-                    self.add(port_2, name)
-                    fixed.add(name)
-                elif ((port_2 in reverse_map) and
-                      (reverse_map[port_2] != name) and
-                      (name not in self.mapping)):
-                    self.add(port_1, name)
-                    fixed.add(name)
-                else:
-                    #raise PortMappingError()
-                    pass
+            missing_ports = [port for port in ports if port not in reverse_map]
 
-        return [(conflict_ports_1[name], conflict_ports_2[name]) for name in total_diff - fixed]
+            #if all ports are mapped, no problem:
+            if len(missing_ports) == 0:
+                fixed.add(name)
+            #if only one port is missing, and the base name is not taken, we can fix it
+            elif len(missing_ports) == 1 and name not in self.mapping:
+                self.add(missing_ports[0], name)
+                fixed.add(name)
+            else:
+                #raise PortMappingError()
+                pass
 
+        LOG.debug('in find conflicts')
+        LOG.debug([conflict_ports[name] for name in all_multiple_ports - fixed])
+        LOG.debug(fixed)
+        return [conflict_ports[name] for name in all_multiple_ports - fixed]
 
 
     def define_composed_contract_ports(self):
