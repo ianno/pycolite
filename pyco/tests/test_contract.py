@@ -80,7 +80,7 @@ def c1_compose_c2(contract_1, contract_2):
     '''
     returns a composition of c1 and c2
     '''
-    composition_mapping = CompositionMapping(contract_1, contract_2)
+    composition_mapping = CompositionMapping([contract_1, contract_2])
     composition_mapping.connect(contract_1.a, contract_2.g)
     composition_mapping.connect(contract_1.b, contract_2.b)
     composition_mapping.add(contract_1.c, 'c1')
@@ -159,7 +159,7 @@ def test_composition_no_common(contract_1, contract_2):
     print contract_1
     print contract_2
 
-    composition_mapping = CompositionMapping(contract_1, contract_2)
+    composition_mapping = CompositionMapping([contract_1, contract_2])
     composition_mapping.add(contract_1.c, 'c1')
     composition_mapping.add(contract_2.c, 'c2')
     composition_mapping.add(contract_1.e, 'e1')
@@ -196,7 +196,7 @@ def test_composition(contract_1, contract_2):
     print contract_1
     print contract_2
 
-    composition_mapping = CompositionMapping(contract_1, contract_2)
+    composition_mapping = CompositionMapping([contract_1, contract_2])
     composition_mapping.connect(contract_1.a, contract_2.g)
     composition_mapping.connect(contract_1.b, contract_2.b)
     composition_mapping.add(contract_1.c, 'c1')
@@ -244,7 +244,7 @@ def test_out_to_out(contract_1, contract_2):
     '''
 
     with pytest.raises(PortConnectionError):
-        composition_mapping = CompositionMapping(contract_1, contract_2)
+        composition_mapping = CompositionMapping([contract_1, contract_2])
         composition_mapping.connect(contract_1.e, contract_2.g)
         composition_mapping.add(contract_1.c, 'c1')
         composition_mapping.add(contract_2.c, 'c2')
@@ -267,7 +267,7 @@ def test_copy(contract_1, contract_2):
     print 'copy:'
     print c1c
 
-    composition_mapping = CompositionMapping(c1c, contract_2)
+    composition_mapping = CompositionMapping([c1c, contract_2])
     composition_mapping.connect(c1c.a, contract_2.g)
     composition_mapping.connect(c1c.b, contract_2.b)
     composition_mapping.add(c1c.c, 'c1')

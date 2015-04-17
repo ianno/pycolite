@@ -352,7 +352,7 @@ class Contract(object):
         '''
 
         if composition_mapping is None:
-            composition_mapping = CompositionMapping(self, other_contract, self.context)
+            composition_mapping = CompositionMapping([self, other_contract], self.context)
         if new_name is None:
             new_name = '%s-x-%s' % (self.name_attribute.base_name, \
                     other_contract.name_attribute.base_name)
@@ -651,21 +651,24 @@ class CompositionMapping(object):
     composition
     '''
 
-    def __init__(self, contract, other_contract, context=None):
+    def __init__(self, contracts, context=None):
         '''
         Init port mapping
         '''
         self.mapping = {}
         self.context = context
-        self.contract = contract
-        self.other_contract = other_contract
-        self.contracts = (self.contract, self.other_contract)
+        try:
+            self.contracts = set(contracts)
+        except TypeError:
+            #if contracts is a single element not in a list
+            self.contracts = set()
+            self.contracts.add(contracts)
 
     def _validate_port(self, port):
         '''
         raises an exception if port is not related to one of the mapped contract
         '''
-        if (port.contract is not self.contract) and (port.contract is not self.other_contract):
+        if port.contract not in self.contracts:
             raise PortMappingError()
 
     def add(self, port, mapped_base_name):
@@ -707,9 +710,8 @@ class CompositionMapping(object):
         all_multiple_ports = set([x for x in list_of_names if list_of_names.count(x) >= 2])
 
 
-        conflict_ports = {name:
-                          [contract.ports_dict[name]
-                           for contract in self.contracts if name in contract.ports_dict]
+        conflict_ports = {name: [contract.ports_dict[name]
+                                 for contract in self.contracts if name in contract.ports_dict]
                           for name in all_multiple_ports}
 
         reverse_map = self.reverse_mapping
@@ -721,7 +723,7 @@ class CompositionMapping(object):
             #conflicting names not in the mapping set
             missing_ports = [port for port in ports if port not in reverse_map]
 
-            #if all ports are mapped, no problem:
+            #if all ports are explicitely mapped, no problem:
             if len(missing_ports) == 0:
                 fixed.add(name)
             #if only one port is missing, and the base name is not taken, we can fix it
@@ -732,10 +734,10 @@ class CompositionMapping(object):
                 #raise PortMappingError()
                 pass
 
-        LOG.debug('in find conflicts')
-        LOG.debug([conflict_ports[name] for name in all_multiple_ports - fixed])
-        LOG.debug(fixed)
-        return [conflict_ports[name] for name in all_multiple_ports - fixed]
+        #LOG.debug('in find conflicts')
+        #LOG.debug([conflict_ports[name] for name in all_multiple_ports - fixed])
+        #LOG.debug(fixed)
+        return [set(conflict_ports[name]) for name in all_multiple_ports - fixed]
 
 
     def define_composed_contract_ports(self):
@@ -757,10 +759,10 @@ class CompositionMapping(object):
         #returns a set of tuples
         conflict_set = self.find_conflicts()
 
-        for (port, other_port) in conflict_set:
-            if not (port in reverse_map and other_port in reverse_map):
+        for port_set in conflict_set:
+            if port_set.issuperset(reverse_map.viewkeys()):
                 #this means a conflict is not explicitely solved
-                LOG.debug((port.base_name, other_port.base_name))
+                LOG.debug(reverse_map.viewkeys() - port_set)
                 LOG.debug(reverse_map)
                 raise PortMappingError()
 
@@ -791,24 +793,28 @@ class CompositionMapping(object):
         #we have disjoint ports or ports which have been previously connected
         #however we are sure, from the previous step, that there are not conflicting
         #port names
-        input_pool = dict(self.contract.input_ports_dict.viewitems() |
-                          self.other_contract.input_ports_dict.viewitems())
-        output_pool = dict(self.contract.output_ports_dict.viewitems() |
-                           self.other_contract.output_ports_dict.viewitems())
+        input_pool = {name: port
+                      for contract in self.contracts
+                      for (name, port) in contract.input_ports_dict.viewitems()}
 
-        mapped_ports = set([port.base_name for port in reverse_map.viewkeys()])
+        output_pool = {name: port
+                       for contract in self.contracts
+                       for (name, port) in contract.output_ports_dict.viewitems()}
+
+
+
+        mapped_ports = set([port.base_name for port in reverse_map])
         LOG.debug(mapped_ports)
-        implicit_input_names = ((self.contract.input_ports_dict.viewkeys() |
-                                self.other_contract.input_ports_dict.viewkeys()) -
-                                 mapped_ports)
-        implicit_output_names = ((self.contract.output_ports_dict.viewkeys() |
-                                  self.other_contract.output_ports_dict.viewkeys()) -
-                                  mapped_ports)
+
+        implicit_input_names = input_pool.viewkeys() - mapped_ports
+        implicit_output_names = output_pool.viewkeys() - mapped_ports
 
         filtered_inputs = implicit_input_names - implicit_output_names
+
         LOG.debug(implicit_input_names)
+
         for name in filtered_inputs:
-            #also, check for feedback loops and do not add inputs in case
+            #also, check for feedback loops or connected I/O and do not add inputs in case
             if not any([input_pool[name].is_connected_to(port) for port in output_pool.viewvalues()]):
                 new_input_ports[name] = Port(name, literal=input_pool[name].literal,
                                              context=self.context)
