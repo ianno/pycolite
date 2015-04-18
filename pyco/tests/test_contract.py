@@ -114,13 +114,13 @@ def c1_compose_c2(contract_1, contract_2):
     returns a composition of c1 and c2
     '''
     composition_mapping = CompositionMapping([contract_1, contract_2])
-    #composition_mapping.connect(contract_1.a, contract_2.g)
-    #composition_mapping.connect(contract_1.b, contract_2.b)
+    composition_mapping.connect(contract_1.a, contract_2.g)
+    composition_mapping.connect(contract_1.b, contract_2.b)
     composition_mapping.add(contract_1.c, 'c1')
     composition_mapping.add(contract_2.c, 'c2')
     composition_mapping.add(contract_1.e, 'e1')
     composition_mapping.add(contract_2.e, 'e2')
-    composition_mapping.add(contract_2.b, 'b2')
+    #composition_mapping.add(contract_2.b, 'b2')
     return contract_1.compose(contract_2, composition_mapping=composition_mapping)
 
 
@@ -152,6 +152,53 @@ def wrong_mapping():
     params = basic_params()
     params[0].remove('b')
     return params
+
+@pytest.fixture()
+def composition_easy_peasy():
+    '''
+    Very simple composition, only two outputs
+    '''
+    inp = []
+    outp = ['x']
+
+    a1 = 'true'
+    g1 = 'Gx'
+    g2 = 'Fx'
+
+    c1 = Contract('easy', inp, outp, a1, g1, saturated=False)
+    c2 = Contract('peasy', inp, outp, a1, g2, saturated=False)
+
+    mapp = CompositionMapping([c1,c2])
+    mapp.add(c2.x, 'x2')
+
+    c12 = c1.compose(c2, composition_mapping=mapp)
+
+    return (c1,c2,c12)
+
+@pytest.fixture()
+def composition_hotzi_totzi():
+    '''
+    Very simple composition, only two outputs
+    '''
+    inp = ['y']
+    outp = ['x']
+
+    a1 = 'Fy'
+    g1 = 'Gx'
+    a2 = 'Gy'
+    g2 = 'Fx'
+
+    c1 = Contract('hotzi', inp, outp, a1, g1, saturated=False)
+    c2 = Contract('totzi', inp, outp, a2, g2, saturated=False)
+
+    mapp = CompositionMapping([c1,c2])
+    mapp.add(c2.x, 'x2')
+    mapp.add(c2.y, 'y2')
+
+    c12 = c1.compose(c2, composition_mapping=mapp)
+
+    return (c1,c2,c12)
+
 
 def test_wrong_mapping(wrong_mapping):
     '''
@@ -396,15 +443,34 @@ def test_composition_consistent(c1_compose_c2):
     assert c1_compose_c2.is_consistent()
 
 
-def test_refinement_after_composition(c1_compose_c2, contract_1, contract_2):
+def test_easy_peasy(composition_easy_peasy):
     '''
-    Composite contract should refine both origin contracts
+    just check everything is in order.
+    Tests true only for these contracts(refinement of composition)
     '''
+    (c1, c2, c12) = composition_easy_peasy
 
-    LOG.debug('test_refinement_after_composition')
-    LOG.debug(c1_compose_c2)
-    LOG.debug(contract_1)
-    LOG.debug(contract_2)
+    LOG.debug(c1)
+    LOG.debug(c2)
+    LOG.debug(c12)
 
-    assert c1_compose_c2.is_refinement(contract_1)
-    #assert c1_compose_c2.is_refinement(contract_2)
+    assert c12.is_compatible()
+    assert c12.is_consistent()
+    assert c12.is_refinement(c1)
+    assert c12.is_refinement(c2)
+
+def test_hotzi_totzi(composition_hotzi_totzi):
+    '''
+    just check everything is in order
+    tests true only for these contracts (refinement of composition)
+    '''
+    (c1, c2, c12) = composition_hotzi_totzi
+
+    LOG.debug(c1)
+    LOG.debug(c2)
+    LOG.debug(c12)
+
+    assert c12.is_compatible()
+    assert c12.is_consistent()
+    assert not c12.is_refinement(c1)
+    assert not c12.is_refinement(c2)

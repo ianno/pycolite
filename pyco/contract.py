@@ -702,6 +702,11 @@ class CompositionMapping(object):
         Add the new constraint
         '''
         self._validate_port(port)
+
+        #check that the port is not in the list with another name
+        #if port in self.reverse_mapping:
+        #    raise PortMappingError('Port already renamed')
+
         try:
             self.mapping[mapped_base_name].add(port)
         except KeyError:
