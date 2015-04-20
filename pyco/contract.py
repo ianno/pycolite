@@ -335,9 +335,8 @@ class Contract(object):
 
         #reinitialize contract Ports
         for port in new_contract.ports_dict.values():
-            port.reinitialize()
-            port.contract
-            
+            port.reinitialize(new_contract)
+
         return new_contract
 
 
