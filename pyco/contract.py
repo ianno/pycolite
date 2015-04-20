@@ -92,12 +92,15 @@ class Port(Observer):
         else:
             return False
 
-    def reinitialize(self):
+    def reinitialize(self, new_contract=None):
         '''
         Generate a new unique _name and propagates it
         '''
         new_literal = Literal(self.base_name, self.context)
         self.literal.merge(new_literal)
+
+        if new_contract is not None:
+            self._contract = new_contract
 
 
     @property
@@ -333,7 +336,8 @@ class Contract(object):
         #reinitialize contract Ports
         for port in new_contract.ports_dict.values():
             port.reinitialize()
-
+            port.contract
+            
         return new_contract
 
 
