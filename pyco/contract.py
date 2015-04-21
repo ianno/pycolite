@@ -379,7 +379,8 @@ class Contract(object):
                          for contract in contracts]
             (new_assumptions, new_guarantees) = reduce(self._reduce_composition_formulae, all_pairs)
             new_contract = Contract(new_name, new_inputs, new_outputs, new_assumptions,
-                                    new_guarantees, self.symbol_set_cls, self.context)
+                                    new_guarantees, self.symbol_set_cls, self.context,
+                                    saturated=True)
 
             #add the two contracts as source contracts
             new_contract.origin_contracts = {contract.name_attribute.unique_name: contract for
@@ -857,6 +858,8 @@ class CompositionMapping(object):
                                           context=self.context)
 
 
+        #import pdb
+        #pdb.set_trace()
         return (new_input_ports, new_output_ports)
 
 
