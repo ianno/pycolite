@@ -121,7 +121,6 @@ class Ltl3baRefinementStrategy(Ltl3baContractInterface):
         Override of abstract method
         '''
         contract_name = self.contract.name_attribute.unique_name
-
         #create formulae to be checked
         assumption_check_formula = self._get_assumptions_check_formula(abstract_contract)
         guarantee_check_formula = self._get_guarantee_check_formula(abstract_contract)
@@ -134,6 +133,7 @@ class Ltl3baRefinementStrategy(Ltl3baContractInterface):
         if output:
             #check guarantees
             #LOG.debug('assumptions are ok')
+            #LOG.debug(assumption_check_formula.generate())
             output = verify_tautology(guarantee_check_formula, \
                     prefix='%s_guarantees_ltl3ba_' % contract_name, \
                     tool_location=self.tool_location, \
@@ -152,7 +152,7 @@ class Ltl3baRefinementStrategy(Ltl3baContractInterface):
         abstract_assume = abstract_contract.assume_formula
         refining_assume = self.contract.assume_formula
 
-        return Implication(abstract_assume, refining_assume)
+        return Implication(abstract_assume, refining_assume, merge_literals=False)
 
     def _get_guarantee_check_formula(self, abstract_contract):
         '''
@@ -164,7 +164,7 @@ class Ltl3baRefinementStrategy(Ltl3baContractInterface):
         abstract_guarantee = abstract_contract.guarantee_formula
         refining_guarantee = self.contract.guarantee_formula
 
-        return Implication(refining_guarantee, abstract_guarantee)
+        return Implication(refining_guarantee, abstract_guarantee, merge_literals=False)
 
 
 RefinementStrategy.register(Ltl3baRefinementStrategy)

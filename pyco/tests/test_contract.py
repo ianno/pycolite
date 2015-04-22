@@ -286,7 +286,7 @@ def test_composition(contract_1, contract_2):
     composition_mapping.add(contract_2.e, 'e2')
 
 
-    contract_3 = contract_1.compose(contract_2, composition_mapping = composition_mapping)
+    contract_3 = contract_1.compose(contract_2, composition_mapping=composition_mapping)
 
     print contract_3
 

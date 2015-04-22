@@ -19,6 +19,51 @@ LOG = logging.getLogger()
 
 LOG.debug('in contract.py')
 
+
+def verify_refinement(refined, abstract, refinement_mapping=None, strategy_obj=None):
+    '''
+    Verifies that refined refines abstract.
+
+    :returns: boolean
+    '''
+    if refinement_mapping is None:
+        refinement_mapping = RefinementMapping([refined, abstract])
+    #get copies
+    contract_copies, mapping_copy = refinement_mapping.get_mapping_copies()
+
+    refined_copy = contract_copies[refined]
+    abstract_copy = contract_copies[abstract]
+
+
+    #connect ports previously connected and not in the mapping
+    #TODO
+    #inefficient
+    for port_a in refined.ports_dict.values():
+        for port_b in abstract.ports_dict.values():
+            if port_a.is_connected_to(port_b):
+                refined_copy.connect_to_port(refined_copy.ports_dict[port_a.base_name],
+                                     abstract_copy.ports_dict[port_b.base_name])
+
+    #connect ports according to mapping relation
+    for (port_a, port_b) in mapping_copy.mapping:
+        port_a.contract.connect_to_port(port_a, port_b)
+
+    #If a strategy is not defined, uses Ltl3ba
+    if strategy_obj is None:
+        strategy_obj = Ltl3baRefinementStrategy(refined_copy, delete_files=False)
+
+    #LOG.debug('refinement')
+    #LOG.debug(refined)
+    #LOG.debug(refined_copy)
+    #LOG.debug(abstract)
+    #LOG.debug(abstract_copy)
+    #LOG.debug(refined_copy.assume_formula.generate())
+
+    if not strategy_obj.check_refinement(abstract_copy):
+        raise NotARefinementError(refinement_mapping)
+
+
+
 class Port(Observer):
     '''
     This class implements a port for a contract. It contains a literal but it
@@ -308,11 +353,12 @@ class Contract(object):
         for key in self.formulae_reverse_dict.viewkeys() - \
                 self.reverse_ports_dict.viewkeys():
 
-            literal = self.formulae_reverse_dict[key]
-            try:
-                literal.merge(self.ports_dict[literal.base_name].literal)
-            except KeyError:
-                raise PortMappingError(key)
+            literals = self.formulae_reverse_dict[key]
+            for literal in literals:
+                try:
+                    literal.merge(self.ports_dict[literal.base_name].literal)
+                except KeyError:
+                    raise PortMappingError(key)
 
 
         #Initialize a dict in which there is a reference to all the contracts
@@ -432,18 +478,22 @@ class Contract(object):
         else:
             raise PortDeclarationError()
 
-    def is_refinement(self, abstract_contract, strategy_obj=None):
+    def is_refinement(self, abstract_contract, refinement_mapping=None, strategy_obj=None):
         '''
         Checks whether the calling contract refines abstract_contract
 
         :returns: boolean
         '''
-
-        #If a strategy is not defined, uses Ltl3ba
-        if strategy_obj is None:
-            strategy_obj = Ltl3baRefinementStrategy(self, delete_files=False)
-
-        return strategy_obj.check_refinement(abstract_contract)
+        #TODO
+        #move these methods (also consistency and compatibility)
+        #to module level
+        try:
+            verify_refinement(self, abstract_contract, refinement_mapping=refinement_mapping,
+                              strategy_obj=strategy_obj)
+        except NotARefinementError:
+            return False
+        else:
+            return True
 
     def is_consistent(self, strategy_obj=None):
         '''
@@ -562,20 +612,30 @@ class Contract(object):
         '''
         Returns a dict which has uniques names as keys, and ports as values
         '''
-        return {key: value for (key, value) in zip( \
-                [port.unique_name \
-                    for port in self.input_ports_dict.viewvalues()], \
-                self.input_ports_dict.viewvalues() )}
+        return {key_port.unique_name:
+                [port for port in self.input_ports_dict.values()
+                 if port.unique_name == key_port.unique_name]
+                for key_port in self.input_ports_dict.viewvalues()}
+
+        #return {key: value for (key, value) in zip( \
+        #        [port.unique_name \
+        #            for port in self.input_ports_dict.viewvalues()], \
+        #        self.input_ports_dict.viewvalues() )}
 
     @property
     def reverse_output_ports_dict(self):
         '''
         Returns a dict which has uniques names as keys, and ports as values
         '''
-        return {key: value for (key, value) in zip( \
-                [port.unique_name \
-                    for port in self.output_ports_dict.viewvalues()], \
-                self.output_ports_dict.viewvalues() )}
+        return {key_port.unique_name:
+                [port for port in self.output_ports_dict.values()
+                 if port.unique_name == key_port.unique_name]
+                for key_port in self.output_ports_dict.viewvalues()}
+
+        #return {key: value for (key, value) in zip( \
+        #        [port.unique_name \
+        #            for port in self.output_ports_dict.viewvalues()], \
+        #        self.output_ports_dict.viewvalues() )}
 
 
     @property
@@ -597,15 +657,20 @@ class Contract(object):
         #overrides duplicates
 
         try:
+            #unzip
             _, values = zip(* (self.assume_formula.get_literal_items() | \
                             self.guarantee_formula.get_literal_items()))
         except ValueError:
             LOG.debug('no literals??')
             return {}
         else:
-            return {key: value for (key, value) in zip( \
-                [literal.unique_name for literal in values], \
-                    values)}
+            return {key_lit.unique_name:
+                    [literal for literal in values if literal.unique_name == key_lit.unique_name]
+                    for key_lit in set(values)}
+
+            #return {key: value for (key, value) in zip( \
+            #    [literal.unique_name for literal in values], \
+            #        values)}
 
     def non_composite_origin_set(self):
         '''
@@ -671,6 +736,73 @@ class PortMapping:
         basic method to add constraints
         '''
         raise NotImplementedError()
+
+class RefinementMapping(object):
+    '''
+    This class stores the information about mapping a certain number
+    of ports among a set of contracts.
+    This can be seen as a generalization of the concept of port conncetion.
+    The main difference is that while the connection is a strong bond among
+    contracts (e.g. a design constraint), a mapping relation is a loose
+    reference, used in verification and synthesis, where a connection is not
+    a absolute constraint and can be modified or deleted.
+    '''
+
+    def __init__(self, contracts):
+        '''
+        Instantiate a mapping constraint.
+
+        :param *args: instances of type Contract
+        '''
+
+        self.contracts = set(contracts)
+
+        self.mapping = set()
+        '''
+        mapping is a list of pairs, which are port
+        base_names who needs to be equivalent.
+        '''
+
+    def _validate_port(self, port):
+        '''
+        raises an exception if port is not related to one of the mapped contract
+        '''
+        if port.contract not in self.contracts:
+            raise PortMappingError(port)
+
+    def add(self, port_a, port_b):
+        '''
+        Add a map constraint between ports in contract_a and contract_b.
+
+        :param base_name_a: base_name of port in contract_a
+        :param base_name_b: base_name of port in contract_b
+        '''
+        self._validate_port(port_a)
+        self._validate_port(port_b)
+        self.mapping.add((port_a, port_b))
+
+
+    def get_mapping_copies(self):
+        '''
+        returns a copy of the contracts and an updated
+        LibraryPortMapping object related to those copies
+
+        :returns: a pair, in which the first element is a dictionary containing a reference
+                  to the copied contracts, and a LibraryPortMapping object
+        '''
+
+        new_contracts = {contract: contract.copy() for contract in self.contracts}
+
+        #create a new mapping in a polymorphic fashion
+        new_mapping = type(self)(new_contracts.values())
+        for (port_a, port_b) in self.mapping:
+            new_mapping.add(new_contracts[port_a.contract].ports_dict[port_a.base_name],
+                            new_contracts[port_b.contract].ports_dict[port_b.base_name])
+
+        return (new_contracts, new_mapping)
+
+
+PortMapping.register(RefinementMapping)
 
 class CompositionMapping(object):
     '''
@@ -902,3 +1034,10 @@ class PortConnectionError(Exception):
     '''
     Raised in case of attemp of connecting two output ports
     '''
+
+
+class NotARefinementError(Exception):
+    '''
+    Raised in case of wrong refinement assertion
+    '''
+    pass
