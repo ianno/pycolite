@@ -13,9 +13,7 @@ from pyco.symbol_sets import Ltl3baSymbolSet
 from ConfigParser import SafeConfigParser
 from pyco.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, LTL3BA_OPT
 import os
-
-import logging
-LOG = logging.getLogger()
+from pyco import LOG
 
 TEMP_FILES_PATH = '/tmp/'
 #LTL3BA_PATH = 'resources/ltl3ba/'

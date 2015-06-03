@@ -11,9 +11,7 @@ from pyco.parser.lexer import BaseSymbolSet
 from pyco.attribute import Attribute
 from abc import abstractmethod
 from pyco.observer import Observer
-
-import logging
-LOG = logging.getLogger()
+from pyco import LOG
 
 PRECEDENCE_TUPLE = (
     ('left', 'IMPLICATION', 'EQUALITY'),

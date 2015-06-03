@@ -12,10 +12,8 @@ from pyco.observer import Observer
 from copy import deepcopy
 from pyco.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
                          Ltl3baConsistencyStrategy)
-import logging
 from abc import ABCMeta, abstractmethod
-
-LOG = logging.getLogger()
+from pyco import LOG
 
 LOG.debug('in contract.py')
 
@@ -214,7 +212,7 @@ class Contract(object):
 
     def __init__(self, base_name, input_ports, output_ports, assume_formula,
                  guarantee_formula, symbol_set_cls=BaseSymbolSet, context=None,
-                 saturated=True):
+                 saturated=True, infer_ports=True):
         '''
         Instantiate a contract.
 
@@ -246,6 +244,8 @@ class Contract(object):
 
         #define attribute name for the contract
         self.name_attribute = Attribute(base_name, self.context)
+
+        self.infer_ports = infer_ports
 
         #first, we need to retrieve formulas and literals from formulas
         #possibilities are that formulae will be either string or LTLFormula
@@ -350,15 +350,16 @@ class Contract(object):
 
         #sometimes some literals in formulae do not have a match
         #we can try to match them with known ports based on their base_name
-        for key in self.formulae_reverse_dict.viewkeys() - \
-                self.reverse_ports_dict.viewkeys():
+        if self.infer_ports:
+            for key in self.formulae_reverse_dict.viewkeys() - \
+                    self.reverse_ports_dict.viewkeys():
 
-            literals = self.formulae_reverse_dict[key]
-            for literal in literals:
-                try:
-                    literal.merge(self.ports_dict[literal.base_name].literal)
-                except KeyError:
-                    raise PortMappingError(key)
+                literals = self.formulae_reverse_dict[key]
+                for literal in literals:
+                    try:
+                        literal.merge(self.ports_dict[literal.base_name].literal)
+                    except KeyError:
+                        raise PortMappingError(key)
 
 
         #Initialize a dict in which there is a reference to all the contracts
@@ -424,7 +425,9 @@ class Contract(object):
             all_pairs = [(contract.assume_formula, contract.guarantee_formula)
                          for contract in contracts]
             (new_assumptions, new_guarantees) = reduce(self._reduce_composition_formulae, all_pairs)
-            new_contract = Contract(new_name, new_inputs, new_outputs, new_assumptions,
+            LOG.debug('c type')
+            LOG.debug(type(self))
+            new_contract = type(self)(new_name, new_inputs, new_outputs, new_assumptions,
                                     new_guarantees, self.symbol_set_cls, self.context,
                                     saturated=True)
 
@@ -960,11 +963,11 @@ class CompositionMapping(object):
         #we have disjoint ports or ports which have been previously connected
         #however we are sure, from the previous step, that there are not conflicting
         #port names
-        input_pool = {name: port
+        input_pool = {name: Port(name, literal=port.literal, context=self.context)#port
                       for contract in self.contracts
                       for (name, port) in contract.input_ports_dict.viewitems()}
 
-        output_pool = {name: port
+        output_pool = {name: Port(name, literal=port.literal, context=self.context)#port
                        for contract in self.contracts
                        for (name, port) in contract.output_ports_dict.viewitems()}
 

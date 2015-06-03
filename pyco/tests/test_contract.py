@@ -7,10 +7,7 @@ author: Antonio Iannopollo
 import pytest
 from pyco.contract import Contract, PortDeclarationError, PortMappingError, \
                         PortConnectionError, CompositionMapping
-import logging
-
-LOG = logging.getLogger()
-
+from pyco import LOG
 
 @pytest.fixture()
 def basic_params():
@@ -199,6 +196,18 @@ def composition_hotzi_totzi():
 
     return (c1,c2,c12)
 
+@pytest.fixture()
+def contract_less_ports():
+    '''
+    to test literal hiding
+    '''
+    input_p = set(('a','b'))
+    output_p = set(('d', 'e'))
+
+    assume = 'X(b) -> FX!(G(a|b) & F(c))'
+    guarantee = 'd & XXXc -> GF(e&d)'
+
+    return Contract('Cports', input_p, output_p, assume, guarantee, saturated=False, infer_ports=False)
 
 def test_wrong_mapping(wrong_mapping):
     '''
@@ -474,3 +483,8 @@ def test_hotzi_totzi(composition_hotzi_totzi):
     assert c12.is_consistent()
     assert not c12.is_refinement(c1)
     assert not c12.is_refinement(c2)
+
+
+def test_port_literal_hiding(contract_less_ports):
+
+    assert True

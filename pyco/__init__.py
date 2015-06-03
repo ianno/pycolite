@@ -6,8 +6,8 @@ Created on Aug 19, 2014
 
 import logging
 
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
+LOG = logging.getLogger('pyco')
+LOG.setLevel(logging.DEBUG)
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
@@ -17,6 +17,6 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 
 # add the handlers to the logger
-log.addHandler(ch)
+LOG.addHandler(ch)
 
-log.debug('INIT')
+LOG.debug('INIT')
