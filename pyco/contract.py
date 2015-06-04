@@ -122,7 +122,12 @@ class Port(Observer):
         '''
         Merges the current port literal with another port or literal
         '''
-        self.literal.merge(port.literal)
+
+        if self.literal != port.literal:
+            self.literal.merge(port.literal)
+        else:
+            LOG.warning('merging port with its own literal: %s'
+                        % self.literal.unique_name)
 
         return self
 
@@ -429,7 +434,7 @@ class Contract(object):
             LOG.debug(type(self))
             new_contract = type(self)(new_name, new_inputs, new_outputs, new_assumptions,
                                     new_guarantees, self.symbol_set_cls, self.context,
-                                    saturated=True)
+                                    saturated=True, infer_ports=False)
 
             #add the two contracts as source contracts
             new_contract.origin_contracts = {contract.name_attribute.unique_name: contract for
