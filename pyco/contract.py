@@ -936,9 +936,9 @@ class CompositionMapping(object):
         conflict_set = self.find_conflicts()
 
         for port_set in conflict_set:
-            if port_set.issuperset(reverse_map.viewkeys()):
+            if port_set > reverse_map.viewkeys():
                 #this means a conflict is not explicitely solved
-                LOG.debug(reverse_map.viewkeys() - port_set)
+                LOG.debug(port_set - reverse_map.viewkeys())
                 LOG.debug(reverse_map)
                 raise PortMappingError()
 
