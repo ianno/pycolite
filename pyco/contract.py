@@ -144,7 +144,8 @@ class Port(Observer):
         '''
         Generate a new unique _name and propagates it
         '''
-        new_literal = Literal(self.base_name, self.context)
+        new_literal = Literal(self.literal.base_name, self.context)
+
         self.literal.merge(new_literal)
 
         if new_contract is not None:
