@@ -81,7 +81,15 @@ class LTLFormula(Observer):
         updated_attribute.attach(self)
 
         #detach from the current attribute
-        self.literals[updated_subject.base_name].detach(self)
+        try:
+            self.literals[updated_subject.base_name].detach(self)
+        except KeyError as key:
+            LOG.critical('%s not found.Look into this')
+            LOG.debug(self)
+            LOG.debug(self.literals)
+            LOG.debug(updated_subject)
+            LOG.debug(updated_subject.base_name)
+            raise
 
         #update the literals list
         if updated_attribute.base_name not in self.literals:
