@@ -431,8 +431,8 @@ class Contract(object):
             all_pairs = [(contract.assume_formula, contract.guarantee_formula)
                          for contract in contracts]
             (new_assumptions, new_guarantees) = reduce(self._reduce_composition_formulae, all_pairs)
-            LOG.debug('c type')
-            LOG.debug(type(self))
+            #LOG.debug('c type')
+            #LOG.debug(type(self))
             new_contract = type(self)(new_name, new_inputs, new_outputs, new_assumptions,
                                     new_guarantees, self.symbol_set_cls, self.context,
                                     saturated=True, infer_ports=False)
@@ -980,14 +980,14 @@ class CompositionMapping(object):
 
 
         mapped_ports = set([port.base_name for port in reverse_map])
-        LOG.debug(mapped_ports)
+        #LOG.debug(mapped_ports)
 
         implicit_input_names = input_pool.viewkeys() - mapped_ports
         implicit_output_names = output_pool.viewkeys() - mapped_ports
 
         filtered_inputs = implicit_input_names - implicit_output_names
 
-        LOG.debug(implicit_input_names)
+        #LOG.debug(implicit_input_names)
 
         for name in filtered_inputs:
             #also, check for feedback loops or connected I/O and do not add inputs in case

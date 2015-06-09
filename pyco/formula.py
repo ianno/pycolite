@@ -84,16 +84,17 @@ class LTLFormula(Observer):
         try:
             self.literals[updated_subject.base_name].detach(self)
         except KeyError as key:
-            LOG.critical('%s not found.Look into this')
+            LOG.critical('%s not found.Look into this' % key)
+            LOG.debug('it may happen for ports. they are observers')
             LOG.debug(self)
             LOG.debug(self.literals)
             LOG.debug(updated_subject)
             LOG.debug(updated_subject.base_name)
-            raise
-
-        #update the literals list
-        if updated_attribute.base_name not in self.literals:
-            del self.literals[updated_subject.base_name]
+            #raise
+        else:
+            #update the literals list
+            if updated_attribute.base_name not in self.literals:
+                del self.literals[updated_subject.base_name]
 
         self.literals[updated_attribute.base_name] = updated_attribute
 
