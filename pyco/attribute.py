@@ -21,7 +21,7 @@ class UniqueIdExtractor(object):
         Initialize index and dictionary
         '''
 
-        self.__index = -1
+        self.__index = 0
         self.__dictionary = {}
 
 
@@ -73,8 +73,8 @@ class AttributeNamePool(object):
 
         obj_number = number_extractor.get_id(registering_obj, reset)
 
-        if base_name != '' and obj_number == -1:
-            return base_name
+        #if base_name != '' and obj_number == -1:
+        #    return base_name
 
         return '%s_%d' % (base_name, obj_number)
 

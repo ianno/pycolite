@@ -95,6 +95,8 @@ class Port(Observer):
             literal = Literal(base_name, context)
 
         self.literal = literal
+        #import pdb
+        #pdb.set_trace()
         self.literal.attach(self)
 
 
@@ -266,12 +268,13 @@ class Contract(object):
         except TypeError:
             #the formula is not a string, we assume is a LTLFormula object
             self.assume_formula = assume_formula
-
-        try:
+            self.guarantee_formula = guarantee_formula
+        else:
             self.guarantee_formula = LTL_PARSER.parse(guarantee_formula, \
                     context=self.context, symbol_set_cls=symbol_set_cls)
-        except TypeError:
-            self.guarantee_formula = guarantee_formula
+
+            #if from strings, equalize formulas:
+            self.assume_formula.equalize_literals_with(self.guarantee_formula)
 
         #put it in saturated form
         if not saturated:
@@ -379,16 +382,56 @@ class Contract(object):
         create a copy, with new disconnected ports, of the current contract
         Preserves feedback loops
         '''
-
-        new_contract = deepcopy(self)
+        #LOG.debug(self)
+        #new_contract = deepcopy(self)
         #new_contract.assume_formula.reinitialize()
         #new_contract.guarantee_formula.reinitialize()
-        new_contract.name_attribute = \
-                Attribute(self.name_attribute.base_name, self.context)
+        new_name = self.base_name
+        new_guarantees = self.guarantee_formula.generate()
+        new_assumptions = self.assume_formula.generate()
+
+        new_guarantees = LTL_PARSER.parse(new_guarantees, \
+                    context=self.context,
+                    symbol_set_cls=self.symbol_set_cls)
+        new_assumptions = LTL_PARSER.parse(new_assumptions, \
+                    context=self.context,
+                    symbol_set_cls=self.symbol_set_cls)
+
+        new_assumptions.equalize_literals_with(new_guarantees)
+
+        literals = dict(new_guarantees.get_literal_items() |
+                        new_assumptions.get_literal_items())
+
+        #create ports
+        new_inputs = {}
+        for name, port in self.input_ports_dict.items():
+            if port.unique_name in literals:
+                new_inputs[name] = Port(name,
+                                    literal=literals[port.unique_name])
+            else:
+                new_inputs[name] = Port(name)
+
+        new_outputs = {}
+        for name, port in self.output_ports_dict.items():
+            if port.unique_name in literals:
+                new_outputs[name] = Port(name,
+                                    literal=literals[port.unique_name])
+            else:
+                new_outputs[name] = Port(name)
+
+        new_contract = type(self)(new_name, new_inputs, new_outputs, new_assumptions,
+                                    new_guarantees, self.symbol_set_cls, self.context,
+                                    saturated=True, infer_ports=False)
+
+        #new_contract.name_attribute = \
+        #        Attribute(self.name_attribute.base_name, self.context)
 
         #reinitialize contract Ports
-        for port in new_contract.ports_dict.values():
-            port.reinitialize(new_contract)
+        #for port in new_contract.ports_dict.values():
+        #    port.reinitialize(new_contract)
+
+        #LOG.debug(self)
+        #LOG.debug(new_contract)
 
         return new_contract
 
@@ -415,6 +458,10 @@ class Contract(object):
             #in case it is a single contract without list
             contracts = set()
             contracts.add(contract_list)
+
+        #if the list is empty, return self
+        if not contracts:
+            return self
 
         contracts.add(self)
 

@@ -76,6 +76,8 @@ def is_empty_formula(formula, prefix='',
         formula_str = formula.generate(symbol_set=Ltl3baSymbolSet, \
                 ignore_precedence=True)
 
+        #LOG.debug(formula_str)
+
         temp_file.write(formula_str)
         temp_file.seek(0)
 
@@ -128,15 +130,18 @@ class Ltl3baRefinementStrategy(Ltl3baContractInterface):
                     prefix='%s_assumptions_ltl3ba_' % contract_name, \
                     tool_location=self.tool_location, \
                     delete_file=self.delete_files)
+
+        #LOG.debug('assumptions are ok')
+        #LOG.debug(assumption_check_formula.generate())
         if output:
             #check guarantees
-            #LOG.debug('assumptions are ok')
-            #LOG.debug(assumption_check_formula.generate())
             output = verify_tautology(guarantee_check_formula, \
                     prefix='%s_guarantees_ltl3ba_' % contract_name, \
                     tool_location=self.tool_location, \
                     delete_file=self.delete_files)
 
+            #LOG.debug('guarantees')
+            #LOG.debug(guarantee_check_formula.generate())
 
         return output
 
@@ -217,7 +222,6 @@ class Ltl3baConsistencyStrategy(Ltl3baContractInterface):
         '''
 
         contract_name = self.contract.name_attribute.unique_name
-
         return not is_empty_formula(self.contract.guarantee_formula, \
                 prefix='%s_consistency_ltl3ba_' % contract_name, \
                 tool_location=self.tool_location, \

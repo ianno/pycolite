@@ -6,6 +6,7 @@ Created on Aug 19, 2014
 
 import logging
 import sys
+import pdb
 
 sys.setrecursionlimit(10000)
 
@@ -23,3 +24,5 @@ ch.setFormatter(formatter)
 LOG.addHandler(ch)
 
 LOG.debug('INIT')
+
+#pdb.set_trace()

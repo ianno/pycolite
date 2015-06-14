@@ -4,6 +4,7 @@ This module define a generic version of the observer design pattern
 Author: Antonio Iannopollo
 '''
 from abc import ABCMeta, abstractmethod
+from pyco import LOG
 
 class Subject:
     '''
@@ -33,7 +34,7 @@ class Subject:
         #this version of the observer is not thread safe, however it may
         #happen that the observer list changes size while iterating
         #then, we need a copy
-
+        #LOG.debug(self.observers)
         for observer in self.observers.copy():
             observer.update(self)
 

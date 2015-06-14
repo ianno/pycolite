@@ -57,7 +57,7 @@ class LTLFormula(Observer):
         '''
         self.literals = {}
 
-    def generate(self, symbol_set=None, ignore_precedence=False):
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
         '''
         doc
         '''
@@ -71,32 +71,35 @@ class LTLFormula(Observer):
         Implementation of the update method from a attribute according to
         the observer pattern
         '''
-
         updated_attribute = updated_subject.get_state()
 
         #if updated_attribute.base_name not in self.literals:
         #    raise KeyError('attribute not in literals dict for the formula')
 
-        #attach to the new attribute
-        updated_attribute.attach(self)
+        #only if different:
+        if self.literals[updated_subject.base_name] != updated_attribute:
+            #attach to the new attribute
+            updated_attribute.attach(self)
 
-        #detach from the current attribute
-        try:
-            self.literals[updated_subject.base_name].detach(self)
-        except KeyError as key:
-            LOG.critical('%s not found.Look into this' % key)
-            LOG.debug('it may happen for ports. they are observers')
-            LOG.debug(self)
-            LOG.debug(self.literals)
-            LOG.debug(updated_subject)
-            LOG.debug(updated_subject.base_name)
-            #raise
+            #detach from the current attribute
+            try:
+                self.literals[updated_subject.base_name].detach(self)
+            except KeyError as key:
+                LOG.critical('%s not found.Look into this' % key)
+                LOG.debug('it may happen for ports. they are observers')
+                LOG.debug(self)
+                LOG.debug(self.literals)
+                LOG.debug(updated_subject)
+                LOG.debug(updated_subject.base_name)
+                #raise
+            else:
+                #update the literals list
+                if updated_attribute.base_name not in self.literals:
+                    del self.literals[updated_subject.base_name]
+
+            self.literals[updated_attribute.base_name] = updated_attribute
         else:
-            #update the literals list
-            if updated_attribute.base_name not in self.literals:
-                del self.literals[updated_subject.base_name]
-
-        self.literals[updated_attribute.base_name] = updated_attribute
+            LOG.debug('attempt to merge same literal %s' % updated_attribute.unique_name)
 
     def equalize_literals_with(self, formula):
         '''
@@ -150,14 +153,19 @@ class Literal(Attribute, LTLFormula):
         LTLFormula.__init__(self)
         Attribute.__init__(self, base_name, context)
 
-    def generate(self, symbol_set=None, ignore_precendence=False):
+        self.literals[base_name] = self
+
+    def generate(self, symbol_set=None, with_base_names = False, ignore_precendence=False):
         '''
         doc
         '''
         if symbol_set == None:
             symbol_set = BaseSymbolSet
 
-        return self.unique_name
+        if with_base_names:
+            return self.base_name
+        else:
+            return self.unique_name
 
 
 class TrueFormula(LTLFormula):
@@ -310,7 +318,7 @@ class BinaryFormula(LTLFormula):
                 self.literals[self.right_formula.base_name] = self.right_formula
 
 
-    def generate(self, symbol_set=None, ignore_precedence=False):
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
         '''
         doc
         '''
@@ -334,8 +342,8 @@ class BinaryFormula(LTLFormula):
             right_index = len(PRECEDENCE_TUPLE)
 
 
-        left_string = self.left_formula.generate(symbol_set, ignore_precedence)
-        right_string = self.right_formula.generate(symbol_set, ignore_precedence)
+        left_string = self.left_formula.generate(symbol_set, with_base_names, ignore_precedence)
+        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence)
 
         if ignore_precedence:
             left_string = '%s%s%s' % \
@@ -414,7 +422,7 @@ class UnaryFormula(LTLFormula):
 
 
 
-    def generate(self, symbol_set=None, ignore_precedence=False):
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
         '''
         doc
         '''
@@ -430,7 +438,7 @@ class UnaryFormula(LTLFormula):
         except NotFoundError:
             right_index = len(PRECEDENCE_TUPLE)
 
-        right_string = self.right_formula.generate(symbol_set, ignore_precedence)
+        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence)
 
         if ignore_precedence:
             right_string = '%s%s%s' % \
