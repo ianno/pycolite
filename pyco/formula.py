@@ -77,29 +77,31 @@ class LTLFormula(Observer):
         #    raise KeyError('attribute not in literals dict for the formula')
 
         #only if different:
-        if self.literals[updated_subject.base_name] != updated_attribute:
-            #attach to the new attribute
-            updated_attribute.attach(self)
-
-            #detach from the current attribute
-            try:
-                self.literals[updated_subject.base_name].detach(self)
-            except KeyError as key:
-                LOG.critical('%s not found.Look into this' % key)
-                LOG.debug('it may happen for ports. they are observers')
-                LOG.debug(self)
-                LOG.debug(self.literals)
-                LOG.debug(updated_subject)
-                LOG.debug(updated_subject.base_name)
-                #raise
-            else:
-                #update the literals list
-                if updated_attribute.base_name not in self.literals:
-                    del self.literals[updated_subject.base_name]
-
-            self.literals[updated_attribute.base_name] = updated_attribute
+        #if self.literals[updated_subject.base_name] != updated_attribute:
+                #detach from the current attribute
+        try:
+            self.literals[updated_subject.base_name].detach(self)
+        except KeyError as key:
+            LOG.critical('%s not found.Look into this' % key)
+            LOG.debug('it may happen for ports. they are observers')
+            LOG.debug(self)
+            LOG.debug(self.literals)
+            LOG.debug(updated_subject)
+            LOG.debug(updated_subject.base_name)
+            #raise
         else:
-            LOG.debug('attempt to merge same literal %s' % updated_attribute.unique_name)
+            pass
+
+        #update the literals list
+        del self.literals[updated_subject.base_name]
+
+        #attach to the new attribute
+        updated_attribute.attach(self)
+
+        self.literals[updated_attribute.base_name] = updated_attribute
+        #else:
+            #LOG.debug('attempt to merge same literal %s' % updated_attribute.unique_name)
+        #    pass
 
     def equalize_literals_with(self, formula):
         '''
@@ -221,6 +223,9 @@ class BinaryFormula(LTLFormula):
          #       or (self.left_formula.base_name != self.right_formula.base_name) \
           #      or (self.left_formula == self.right_formula)
 
+        #call superclass update
+        LTLFormula.update(self, updated_subject)
+
         if updated_subject == self.left_formula:
 
             #security check. updated subject shouldn't be also equal to
@@ -231,8 +236,6 @@ class BinaryFormula(LTLFormula):
         elif updated_subject == self.right_formula:
             self.right_formula = updated_subject.get_state()
 
-        #call superclass update
-        LTLFormula.update(self, updated_subject)
 
     def get_literal_items(self):
         '''
@@ -415,10 +418,10 @@ class UnaryFormula(LTLFormula):
         #linked to, that's an error
         assert updated_subject == self.right_formula
 
-        self.right_formula = updated_subject.get_state()
-
         #call superclass update
         LTLFormula.update(self, updated_subject)
+
+        self.right_formula = updated_subject.get_state()
 
 
 
