@@ -71,25 +71,25 @@ class NuxmvPathLoader(object):
 
         return cls.nuxmv_path
 
-def verify_tautology(formula, prefix='',
+def is_empty_formula(formula, prefix='',
                      tool_location=NuxmvPathLoader.get_path(),
                      delete_file=True):
     '''
-    Verifies if a LTLFormula object represents a tautology
+    Verifies if a LTLFormula object represents an empty formula
     '''
 
     #to check if formula implication is valid, we negate it
     #and check that the negation is an empty automaton
     n_formula = Negation(formula)
 
-    return is_empty_formula(n_formula, prefix=prefix, \
+    return verify_tautology(n_formula, prefix=prefix, \
             tool_location=tool_location, delete_file=delete_file)
 
-def is_empty_formula(formula, prefix='',
+def verify_tautology(formula, prefix='',
                      tool_location=NuxmvPathLoader.get_path(),
                      delete_file=True):
     '''
-    Verifies if a LTLFormula object represents an empty formula
+    Verifies if a LTLFormula object represents a tautology
     '''
 
     temp_file = NamedTemporaryFile( \
@@ -116,10 +116,10 @@ def is_empty_formula(formula, prefix='',
         LOG.debug(output)
         LOG.debug(output.endswith(NUXMV_FALSE))
         if output.endswith(NUXMV_FALSE):
-            return True
+            return False
         else:
             #LOG.debug(output)
-            return False
+            return True
 
 class NuxmvContractInterface(object):
     '''
@@ -163,8 +163,8 @@ class NuxmvRefinementStrategy(NuxmvContractInterface):
                     tool_location=self.tool_location, \
                     delete_file=self.delete_files)
 
-        #LOG.debug('assumptions are ok')
-        #LOG.debug(assumption_check_formula.generate())
+        LOG.debug('assumptions are ok')
+        LOG.debug(assumption_check_formula.generate())
         if output:
             #check guarantees
             output = verify_tautology(guarantee_check_formula, \
@@ -172,8 +172,8 @@ class NuxmvRefinementStrategy(NuxmvContractInterface):
                     tool_location=self.tool_location, \
                     delete_file=self.delete_files)
 
-            #LOG.debug('guarantees')
-            #LOG.debug(guarantee_check_formula.generate())
+            LOG.debug('guarantees')
+            LOG.debug(guarantee_check_formula.generate())
 
         return output
 
