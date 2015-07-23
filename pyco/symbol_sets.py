@@ -30,3 +30,29 @@ class Ltl3baSymbolSet(object):
         'RPAREN' : ')'
         }
 
+class NusmvSymbolSet(object):
+    '''
+    Spin symbol class
+    All literals MUST be lowercase strings
+    Make sure to include spaces before and after each symbols,
+    you can trim later
+    '''
+
+    symbols = {
+        'AND' : r'&',
+        'OR' : r'|',
+        'GLOBALLY' : r'G',
+        'EVENTUALLY' : r'F',
+        'NEXT' : r'X',
+        'UNTIL' : r'U',
+        'RELEASE' : r'V',
+        'WEAK_UNTIL' : r'W',
+        'IMPLICATION' : r'->',
+        'EQUALITY' : r'<->',
+        'NOT' : r'!',
+        'TRUE' : r'TRUE',
+        'FALSE' : r'FALSE',
+        'LPAREN' : '(',
+        'RPAREN' : ')'
+        }
+

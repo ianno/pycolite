@@ -10,8 +10,11 @@ from pyco.attribute import Attribute
 from pyco.formula import Literal, Conjunction, Disjunction, Negation
 from pyco.observer import Observer
 from copy import deepcopy
-from pyco.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
-                         Ltl3baConsistencyStrategy)
+#from pyco.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
+#                         Ltl3baConsistencyStrategy)
+
+from pyco.nuxmv import (NuxmvRefinementStrategy, NuxmvCompatibilityStrategy,
+                         NuxmvConsistencyStrategy)
 from abc import ABCMeta, abstractmethod
 from pyco import LOG
 
@@ -46,9 +49,9 @@ def verify_refinement(refined, abstract, refinement_mapping=None, strategy_obj=N
     for (port_a, port_b) in mapping_copy.mapping:
         port_a.contract.connect_to_port(port_a, port_b)
 
-    #If a strategy is not defined, uses Ltl3ba
+    #If a strategy is not defined, uses Nuxmv
     if strategy_obj is None:
-        strategy_obj = Ltl3baRefinementStrategy(refined_copy, delete_files=False)
+        strategy_obj = NuxmvRefinementStrategy(refined_copy, delete_files=False)
 
     #LOG.debug('refinement')
     #LOG.debug(refined)
@@ -560,7 +563,7 @@ class Contract(object):
         guarantee formula is not an empty formula
         '''
         if strategy_obj is None:
-            strategy_obj = Ltl3baConsistencyStrategy(self, delete_files=False)
+            strategy_obj = NuxmvConsistencyStrategy(self, delete_files=False)
 
         return strategy_obj.check_consistency()
 
@@ -573,7 +576,7 @@ class Contract(object):
         '''
 
         if strategy_obj is None:
-            strategy_obj = Ltl3baCompatibilityStrategy(self, delete_files=False)
+            strategy_obj = NuxmvCompatibilityStrategy(self, delete_files=False)
 
         return strategy_obj.check_compatibility()
 
