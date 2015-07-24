@@ -107,14 +107,14 @@ def verify_tautology(formula, prefix='',
     with temp_file:
 
 
-        LOG.debug(MODULE_TEMPLATE % (var_str, formula_str))
+        #LOG.debug(MODULE_TEMPLATE % (var_str, formula_str))
 
         temp_file.write(MODULE_TEMPLATE % (var_str, formula_str))
         temp_file.seek(0)
 
         output = check_output([tool_location, CMD_OPT, temp_file.name])
-        LOG.debug(output)
-        LOG.debug(output.endswith(NUXMV_FALSE))
+        #LOG.debug(output)
+        #LOG.debug(output.endswith(NUXMV_FALSE))
         if output.endswith(NUXMV_FALSE):
             return False
         else:
@@ -163,8 +163,8 @@ class NuxmvRefinementStrategy(NuxmvContractInterface):
                     tool_location=self.tool_location, \
                     delete_file=self.delete_files)
 
-        LOG.debug('assumptions are ok')
-        LOG.debug(assumption_check_formula.generate())
+        #LOG.debug('assumptions are ok')
+        #LOG.debug(assumption_check_formula.generate())
         if output:
             #check guarantees
             output = verify_tautology(guarantee_check_formula, \
@@ -172,8 +172,8 @@ class NuxmvRefinementStrategy(NuxmvContractInterface):
                     tool_location=self.tool_location, \
                     delete_file=self.delete_files)
 
-            LOG.debug('guarantees')
-            LOG.debug(guarantee_check_formula.generate())
+            #LOG.debug('guarantees')
+            #LOG.debug(guarantee_check_formula.generate())
 
         return output
 
