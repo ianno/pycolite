@@ -100,7 +100,7 @@ def verify_tautology(formula, prefix='',
                 ignore_precedence=True)
 
     literals = [l for (_, l) in formula.get_literal_items()]
-    LOG.debug(literals)
+    #LOG.debug(literals)
     var_list = ['\t%s: boolean;\n' %l.unique_name for l in literals]
     var_str = ''.join(var_list)
 
