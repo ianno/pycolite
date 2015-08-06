@@ -81,6 +81,8 @@ class LTLFormula(Observer):
                 #detach from the current attribute
         try:
             self.literals[updated_subject.base_name].detach(self)
+            #update the literals list
+            del self.literals[updated_subject.base_name]
         except KeyError as key:
             LOG.critical('%s not found.Look into this' % key)
             LOG.debug('it may happen for ports. they are observers')
@@ -92,8 +94,7 @@ class LTLFormula(Observer):
         else:
             pass
 
-        #update the literals list
-        del self.literals[updated_subject.base_name]
+
 
         #attach to the new attribute
         updated_attribute.attach(self)
