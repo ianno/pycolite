@@ -988,7 +988,8 @@ class CompositionMapping(object):
         for port_set in conflict_set:
             if port_set > set(reverse_map.viewkeys()):
                 #this means a conflict is not explicitely solved
-                LOG.debug(port_set - reverse_map.viewkeys())
+                LOG.debug(['%s - %s' %(port.contract.base_name, port.base_name)
+                           for port in (port_set - reverse_map.viewkeys())])
                 LOG.debug(reverse_map)
                 raise PortMappingError()
 
