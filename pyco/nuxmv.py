@@ -36,7 +36,7 @@ LTLSPEC (
 '''
 
 TEMP_FILES_PATH = '/tmp/'
-NUXMV_FALSE = 'is false\n'
+NUXMV_TRUE = 'is true\n'
 
 def trace_parser(trace):
     '''
@@ -115,11 +115,11 @@ def verify_tautology(formula, prefix='',
         output = check_output([tool_location, CMD_OPT, temp_file.name])
         #LOG.debug(output)
         #LOG.debug(output.endswith(NUXMV_FALSE))
-        if output.endswith(NUXMV_FALSE):
-            return False
+        if output.endswith(NUXMV_TRUE):
+            return True
         else:
             #LOG.debug(output)
-            return True
+            return False
 
 class NuxmvContractInterface(object):
     '''
@@ -163,7 +163,7 @@ class NuxmvRefinementStrategy(NuxmvContractInterface):
                     tool_location=self.tool_location, \
                     delete_file=self.delete_files)
 
-        #LOG.debug('assumptions are ok')
+        #LOG.debug('assumptions')
         #LOG.debug(assumption_check_formula.generate())
         if output:
             #check guarantees
