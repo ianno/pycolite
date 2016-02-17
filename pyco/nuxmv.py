@@ -261,4 +261,3 @@ class NuxmvConsistencyStrategy(NuxmvContractInterface):
 
 
 ConsistencyStrategy.register(NuxmvConsistencyStrategy)
-
