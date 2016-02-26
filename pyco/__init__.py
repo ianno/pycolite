@@ -11,10 +11,10 @@ import pdb
 sys.setrecursionlimit(10000)
 
 LOG = logging.getLogger('pyco')
-LOG.setLevel(logging.DEBUG)
+LOG.setLevel(logging.CRITICAL)
 
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+#ch.setLevel(logging.DEBUG)
 
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)d  - %(levelname)s - %(message)s')

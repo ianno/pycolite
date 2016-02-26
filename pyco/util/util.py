@@ -20,6 +20,8 @@ PATH_SECT = 'PATHS'
 LTL3BA_OPT = 'ltl3ba'
 TEMP_OPT = 'temp_dir'
 
+NUXMV_OPT = 'nuxmv'
+
 def create_main_config_file(filepath, section_list, option_dict):
     '''
     Create main config file given the current module path
