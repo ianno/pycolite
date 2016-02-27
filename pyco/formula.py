@@ -9,7 +9,7 @@ used for the generation of the LTL specs.
 
 from pyco.parser.lexer import BaseSymbolSet
 from pyco.attribute import Attribute
-from abc import abstractmethod
+#from abc import abstractmethod
 from pyco.observer import Observer
 from pyco import LOG
 
@@ -135,6 +135,28 @@ class LTLFormula(Observer):
 
         return self.literals.viewitems()
 
+    def unroll_1step(self, symbol_set=None, with_base_names=False, ignore_precendence=False):
+        '''
+        Unroll, or expand, the LTL formula one step forward.
+        That means that no LTL operator are present at current time tick.
+        To unroll, follows the following rules:
+
+        Unroll(X a) = TRUE ^ Xa
+        Unroll(G a) = a ^ XGa
+        Unroll(F a) = a v XFa
+        Unroll(a U b) = b v (a ^ X(a U b))
+        Unroll(a W b) = b v (a ^ X(a W b))
+        Unroll(a R b) = b ^ (a v X(a R b))
+
+        To easily check the proposition at time 0, all the temporal operators will be removed after unrolling (substitute TRUE?)
+        '''
+
+        #by default (literals and propositional formulas)
+        #generate a string as usual
+        return self.generate(symbol_set, with_base_names, ignore_precendence)
+
+
+
 
 class Literal(Attribute, LTLFormula):
     '''
@@ -158,7 +180,7 @@ class Literal(Attribute, LTLFormula):
 
         self.literals[base_name] = self
 
-    def generate(self, symbol_set=None, with_base_names = False, ignore_precendence=False):
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precendence=False):
         '''
         doc
         '''
@@ -169,6 +191,7 @@ class Literal(Attribute, LTLFormula):
             return self.base_name
         else:
             return self.unique_name
+
 
 
 class TrueFormula(LTLFormula):
@@ -186,6 +209,7 @@ class FalseFormula(LTLFormula):
     '''
 
     Symbol = 'FALSE'
+
 
 
 class BinaryFormula(LTLFormula):
@@ -322,7 +346,7 @@ class BinaryFormula(LTLFormula):
                 self.literals[self.right_formula.base_name] = self.right_formula
 
 
-    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+    def __generate_binary(self, left_string, right_string, symbol_set=None, with_base_names=False, ignore_precedence=False):
         '''
         doc
         '''
@@ -344,10 +368,6 @@ class BinaryFormula(LTLFormula):
             right_index, _ = find_precedence_index(right_symbol)
         except NotFoundError:
             right_index = len(PRECEDENCE_TUPLE)
-
-
-        left_string = self.left_formula.generate(symbol_set, with_base_names, ignore_precedence)
-        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence)
 
         if ignore_precedence:
             left_string = '%s%s%s' % \
@@ -381,6 +401,24 @@ class BinaryFormula(LTLFormula):
 
         return '%s %s %s' % (left_string, symbol_set.symbols[self.Symbol], right_string)
 
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+        '''
+        generate full formula string
+        '''
+        left_string = self.left_formula.generate(symbol_set, with_base_names, ignore_precedence)
+        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence)
+
+        return self.__generate_binary(left_string, right_string, symbol_set, with_base_names, ignore_precedence)
+
+
+    def unroll_1step(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+        '''
+        Return with the unrolling of both sides
+        '''
+        left_string = self.left_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
+        right_string = self.right_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
+
+        return self.__generate_binary(left_string, right_string, symbol_set, with_base_names, ignore_precedence)
 
 
 class UnaryFormula(LTLFormula):
@@ -426,7 +464,7 @@ class UnaryFormula(LTLFormula):
 
 
 
-    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+    def __generate_unary(self, right_string, symbol_set=None, with_base_names=False, ignore_precedence=False):
         '''
         doc
         '''
@@ -442,8 +480,6 @@ class UnaryFormula(LTLFormula):
         except NotFoundError:
             right_index = len(PRECEDENCE_TUPLE)
 
-        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence)
-
         if ignore_precedence:
             right_string = '%s%s%s' % \
                     (symbol_set.symbols['LPAREN'], right_string, symbol_set.symbols['RPAREN'])
@@ -457,6 +493,21 @@ class UnaryFormula(LTLFormula):
 
         return '%s %s' % (symbol_set.symbols[self.Symbol], right_string)
 
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+        '''
+        generate full formula string
+        '''
+        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence)
+
+        return self.__generate_unary(right_string, symbol_set, with_base_names, ignore_precedence)
+
+    def unroll_1step(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+        '''
+        generate 1step formula string
+        '''
+        right_string = self.right_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
+
+        return self.__generate_unary(right_string, symbol_set, with_base_names, ignore_precedence)
 
 class Conjunction(BinaryFormula):
     '''
@@ -496,6 +547,14 @@ class Globally(UnaryFormula):
     '''
     Symbol = 'GLOBALLY'
 
+    def unroll_1step(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+        '''
+        generate 1step formula string
+        '''
+        right_string = self.right_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
+
+        return right_string
+
 
 class Eventually(UnaryFormula):
     '''
@@ -503,12 +562,33 @@ class Eventually(UnaryFormula):
     '''
     Symbol = 'EVENTUALLY'
 
+    def unroll_1step(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+        '''
+        generate 1step formula string
+
+        Unroll(Fa) = a v XFa -> (assuming formula true in the future)-> TRUE
+        '''
+        if symbol_set == None:
+            symbol_set = BaseSymbolSet
+
+        return symbol_set.symbols[TrueFormula.Symbol]
+
+
 
 class Next(UnaryFormula):
     '''
     doc
     '''
     Symbol = 'NEXT'
+
+    def unroll_1step(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+        '''
+        generate 1step formula string
+        '''
+        if symbol_set == None:
+            symbol_set = BaseSymbolSet
+
+        return symbol_set.symbols[TrueFormula.Symbol]
 
 
 
@@ -525,7 +605,3 @@ class InvalidFormulaException(Exception):
     doc
     '''
     pass
-
-
-
-
