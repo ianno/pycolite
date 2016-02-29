@@ -8,7 +8,7 @@ from pyco.interface_strategy import (RefinementStrategy,
             CompatibilityStrategy, ConsistencyStrategy)
 from tempfile import NamedTemporaryFile
 from subprocess import check_output
-from pyco.formula import Negation, Implication
+from pyco.formula import Negation, Implication, Conjunction
 from pyco.symbol_sets import NusmvSymbolSet
 from ConfigParser import SafeConfigParser
 from pyco.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
@@ -157,23 +157,15 @@ class NuxmvRefinementStrategy(NuxmvContractInterface):
         assumption_check_formula = self._get_assumptions_check_formula(abstract_contract)
         guarantee_check_formula = self._get_guarantee_check_formula(abstract_contract)
 
-        #check assumptions
-        output = verify_tautology(assumption_check_formula, \
+
+        both_formulas = Conjunction(assumption_check_formula, guarantee_check_formula)
+
+        #check both formulas
+        output = verify_tautology(both_formulas, \
                     prefix='%s_assumptions_nuxmv_' % contract_name, \
                     tool_location=self.tool_location, \
                     delete_file=self.delete_files)
 
-        #LOG.debug('assumptions')
-        #LOG.debug(assumption_check_formula.generate())
-        if output:
-            #check guarantees
-            output = verify_tautology(guarantee_check_formula, \
-                    prefix='%s_guarantees_nuxmv_' % contract_name, \
-                    tool_location=self.tool_location, \
-                    delete_file=self.delete_files)
-
-            #LOG.debug('guarantees')
-            #LOG.debug(guarantee_check_formula.generate())
 
         return output
 
