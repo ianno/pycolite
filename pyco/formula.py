@@ -151,9 +151,7 @@ class LTLFormula(Observer):
         To easily check the proposition at time 0, all the temporal operators will be removed after unrolling (substitute TRUE?)
         '''
 
-        #by default (literals and propositional formulas)
-        #generate a string as usual
-        return self.generate(symbol_set, with_base_names, ignore_precendence)
+        return self
 
 
 
@@ -415,10 +413,10 @@ class BinaryFormula(LTLFormula):
         '''
         Return with the unrolling of both sides
         '''
-        left_string = self.left_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
-        right_string = self.right_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
+        left_formula = self.left_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
+        right_formula = self.right_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
 
-        return self.__generate_binary(left_string, right_string, symbol_set, with_base_names, ignore_precedence)
+        return self.__class__(left_formula, right_formula)
 
 
 class UnaryFormula(LTLFormula):
@@ -505,9 +503,9 @@ class UnaryFormula(LTLFormula):
         '''
         generate 1step formula string
         '''
-        right_string = self.right_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
+        right_formula = self.right_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
 
-        return self.__generate_unary(right_string, symbol_set, with_base_names, ignore_precedence)
+        return self.__class__(right_formula)
 
 class Conjunction(BinaryFormula):
     '''
@@ -551,9 +549,9 @@ class Globally(UnaryFormula):
         '''
         generate 1step formula string
         '''
-        right_string = self.right_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
+        right_formula = self.right_formula.unroll_1step(symbol_set, with_base_names, ignore_precedence)
 
-        return right_string
+        return right_formula
 
 
 class Eventually(UnaryFormula):
@@ -568,10 +566,8 @@ class Eventually(UnaryFormula):
 
         Unroll(Fa) = a v XFa -> (assuming formula true in the future)-> TRUE
         '''
-        if symbol_set == None:
-            symbol_set = BaseSymbolSet
 
-        return symbol_set.symbols[TrueFormula.Symbol]
+        return TrueFormula()
 
 
 
@@ -585,10 +581,8 @@ class Next(UnaryFormula):
         '''
         generate 1step formula string
         '''
-        if symbol_set == None:
-            symbol_set = BaseSymbolSet
 
-        return symbol_set.symbols[TrueFormula.Symbol]
+        return TrueFormula()
 
 
 
