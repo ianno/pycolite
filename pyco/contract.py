@@ -480,7 +480,14 @@ class Contract(object):
         else:
             all_pairs = [(contract.assume_formula, contract.guarantee_formula)
                          for contract in contracts]
-            (new_assumptions, new_guarantees) = reduce(self._reduce_composition_formulae, all_pairs)
+            (part_assumptions, new_guarantees) = reduce(self._reduce_composition_formulae, all_pairs)
+
+
+            new_assumptions = Disjunction(
+                                part_assumptions,
+                                Negation(new_guarantees),
+                                merge_literals=False)
+
             #LOG.debug('c type')
             #LOG.debug(type(self))
             new_contract = type(self)(new_name, new_inputs, new_outputs, new_assumptions,
@@ -510,12 +517,12 @@ class Contract(object):
 
         new_guarantees = Conjunction(guarantee_a, guarantee_b, merge_literals=False)
 
-        neg_guarantees = Negation(new_guarantees)
+        #neg_guarantees = Negation(new_guarantees)
 
-        new_assumptions = Disjunction(and_of_assumptions, neg_guarantees,
-                                      merge_literals=False)
+        #new_assumptions = Disjunction(and_of_assumptions, neg_guarantees,
+        #                              merge_literals=False)
 
-        return (new_assumptions, new_guarantees)
+        return (and_of_assumptions, new_guarantees)
 
 
 

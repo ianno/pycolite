@@ -151,7 +151,39 @@ class LTLFormula(Observer):
         To easily check the proposition at time 0, all the temporal operators will be removed after unrolling (substitute TRUE?)
         '''
 
+        return self.evaluate_at_t(0,0)
+
+    def evaluate_at_t(self, current, t):
+        '''
+        evaluate formula at step t
+        '''
+
         return self
+
+    def unroll_nsteps(self, steps):
+        '''
+        Unroll, or expand, the LTL formula one step forward.
+        That means that no LTL operator are present at current time tick.
+        To unroll, follows the following rules:
+
+        Unroll(X a) = TRUE ^ Xa
+        Unroll(G a) = a ^ XGa
+        Unroll(F a) = a v XFa
+        Unroll(a U b) = b v (a ^ X(a U b))
+        Unroll(a W b) = b v (a ^ X(a W b))
+        Unroll(a R b) = b ^ (a v X(a R b))
+
+        To easily check the proposition at time 0, all the temporal operators will be removed after unrolling (substitute TRUE?)
+        '''
+
+
+        formula = self.evaluate_at_t(0,0)
+        for n in xrange(1, steps):
+            next_step = self.evaluate_at_t(0,n)
+            formula.equalize_literals_with(next_step)
+            formula = Conjunction(formula, next_step)
+
+        return formula
 
 
 
@@ -169,13 +201,14 @@ class Literal(Attribute, LTLFormula):
 
         :paramenter base_name: literal name, ok if not unique
         :type base_name: string
-        :parameter context: context realative to the unique literal name
+        :parameter context: context relative to the unique literal name
         generation
         :type context: object
         '''
         LTLFormula.__init__(self)
         Attribute.__init__(self, base_name, context)
 
+        self.attach(self)
         self.literals[base_name] = self
 
     def generate(self, symbol_set=None, with_base_names=False, ignore_precendence=False):
@@ -186,10 +219,62 @@ class Literal(Attribute, LTLFormula):
             symbol_set = BaseSymbolSet
 
         if with_base_names:
-            return self.base_name
+            return self.literals.values()[0].base_name
         else:
-            return self.unique_name
+            return self.literals.values()[0].unique_name
 
+    def update(self, updated_subject):
+        '''
+        Implementation of the update method from a attribute according to
+        the observer pattern
+        '''
+
+        updated_attribute = updated_subject.get_state()
+
+        super(Literal, self).update(updated_subject)
+
+        self.unique_name = updated_attribute.unique_name
+
+    def evaluate_at_t(self, current, t):
+        '''
+        evaluate formula at step t
+        '''
+        delta = t - current
+        if delta != 0:
+            return TrueFormula()
+        else:
+            if t==0:
+                #self.unrolled = UnrolledLiteral(self.base_name, self.context)
+                return UnrolledLiteral(self.base_name, self, t, context=self.context)
+            else:
+                return UnrolledLiteral('next%d_%s' % (t, self.unique_name), self, t, context=self.context)
+
+
+
+class UnrolledLiteral(Literal):
+    '''
+    A literal with refs to its successors in an unrolled formula
+    '''
+
+    def __init__(self, base_name, orginal_literal, depth, context=None):
+        '''
+        A literal with a successors list
+        '''
+
+        super(UnrolledLiteral, self).__init__(base_name, context=None)
+        self.original = orginal_literal
+        self.depth = depth
+
+    def update(self, updated_subject):
+        '''
+        Implementation of the update method from a attribute according to
+        the observer pattern
+        '''
+
+        super(UnrolledLiteral, self).update(updated_subject)
+
+        self.original = self.literals[self.base_name].original
+        self.depth = self.literals[self.base_name].depth
 
 
 class TrueFormula(LTLFormula):
@@ -418,6 +503,19 @@ class BinaryFormula(LTLFormula):
 
         return self.__class__(left_formula, right_formula)
 
+    def evaluate_at_t(self, current, t):
+        '''
+        evaluate formula at step t
+        '''
+
+        if t==0:
+            return self.unroll_1step()
+        else:
+            left_formula = self.left_formula.evaluate_at_t(current, t)
+            right_formula = self.right_formula.evaluate_at_t(current, t)
+
+            return self.__class__(left_formula, right_formula)
+
 
 class UnaryFormula(LTLFormula):
     '''
@@ -507,6 +605,18 @@ class UnaryFormula(LTLFormula):
 
         return self.__class__(right_formula)
 
+    def evaluate_at_t(self, current, t):
+        '''
+        evaluate formula at step t
+        '''
+
+        if t==0:
+            return self.unroll_1step()
+        else:
+            right_formula = self.right_formula.evaluate_at_t(current, t)
+
+            return self.__class__(right_formula)
+
 class Conjunction(BinaryFormula):
     '''
     doc
@@ -553,6 +663,15 @@ class Globally(UnaryFormula):
 
         return right_formula
 
+    def evaluate_at_t(self, current, t):
+        '''
+        evaluate formula at step t
+        '''
+        current = t
+        right_formula = self.right_formula.evaluate_at_t(current, t)
+
+        return right_formula
+
 
 class Eventually(UnaryFormula):
     '''
@@ -569,6 +688,15 @@ class Eventually(UnaryFormula):
 
         return TrueFormula()
 
+    def evaluate_at_t(self, current, t):
+        '''
+        evaluate formula at step t
+        '''
+
+        if t==0:
+            return self.unroll_1step()
+        else:
+            return TrueFormula()
 
 
 class Next(UnaryFormula):
@@ -582,7 +710,17 @@ class Next(UnaryFormula):
         generate 1step formula string
         '''
 
-        return TrueFormula()
+        return self.evaluate_at_t(0,0)
+
+    def evaluate_at_t(self, current, t):
+        '''
+        evaluate formula at step t
+        '''
+
+        delta = t - current
+
+        right_formula = self.right_formula.evaluate_at_t(current+1, t+1)
+        return right_formula
 
 
 
@@ -592,6 +730,19 @@ class Negation(UnaryFormula):
     '''
     Symbol = 'NOT'
 
+    def evaluate_at_t(self, current, t):
+        '''
+        evaluate formula at step t
+        '''
+
+        if t==0:
+            return self.unroll_1step()
+        else:
+            right_formula = self.right_formula.evaluate_at_t(current, t)
+            if isinstance(right_formula, TrueFormula) and not isinstance(self.right_formula, TrueFormula):
+                return right_formula
+            else:
+                return self.__class__(right_formula)
 
 
 class InvalidFormulaException(Exception):

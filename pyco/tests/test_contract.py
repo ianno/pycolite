@@ -35,7 +35,7 @@ def contract_1():
     input_p = set(('a','b','c'))
     output_p = set(('d', 'e'))
 
-    assume = 'X(b) -> FX!(G(a|b) & F(c))'
+    assume = 'b & X(b) -> FX!(G(a|b) & F(c))'
     guarantee = 'd & XXXc -> GF(e&d)'
 
     return Contract('C1', input_p, output_p, assume, guarantee, saturated=False)
@@ -45,7 +45,7 @@ def contract_2():
     input_p = set(('f','b','c'))
     output_p = set(('g', 'e'))
 
-    assume = 'G(f & Xb | XXc)'
+    assume = 'G(f & b & Xb | XXc)'
     guarantee = 'F(g|e)'
 
     return Contract('C2', input_p, output_p, assume, guarantee, saturated=False)
@@ -303,8 +303,19 @@ def test_composition(contract_1, contract_2):
     print contract_1
     print contract_2
 
-    print contract_3.assume_formula.unroll_1step().generate()
-    print contract_3.guarantee_formula.unroll_1step().generate()
+
+    #print contract_2.assume_formula.unroll_1step().generate()
+    #print contract_2.guarantee_formula.unroll_1step().generate()
+    print 'C2'
+    print contract_2.assume_formula.unroll_nsteps(3).generate()
+    print contract_2.guarantee_formula.unroll_nsteps(3).generate()
+
+    #print contract_3.assume_formula.unroll_1step().generate()
+    #print contract_3.guarantee_formula.unroll_1step().generate()
+
+    print 'C2'
+    print contract_3.assume_formula.unroll_nsteps(3).generate()
+    print contract_3.guarantee_formula.unroll_nsteps(3).generate()
 
     #a is not input anymore and b is merged
     assert len(contract_3.input_ports_dict) == \
