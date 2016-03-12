@@ -101,7 +101,7 @@ def verify_tautology(formula, prefix='',
 
     literals = [l for (_, l) in formula.get_literal_items()]
     #LOG.debug(literals)
-    var_list = ['\t%s: boolean;\n' %l.unique_name for l in literals]
+    var_list = set(['\t%s: boolean;\n' %l.unique_name for l in literals])
     var_str = ''.join(var_list)
 
     with temp_file:
@@ -112,7 +112,8 @@ def verify_tautology(formula, prefix='',
         temp_file.write(MODULE_TEMPLATE % (var_str, formula_str))
         temp_file.seek(0)
 
-        output = check_output([tool_location, CMD_OPT, temp_file.name])
+        #output = check_output([tool_location, CMD_OPT, temp_file.name])
+        output = check_output([tool_location, temp_file.name])
         #LOG.debug(output)
         #LOG.debug(output.endswith(NUXMV_FALSE))
         if output.endswith(NUXMV_TRUE):
