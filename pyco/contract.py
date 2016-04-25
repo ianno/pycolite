@@ -14,7 +14,7 @@ from copy import deepcopy
 #                         Ltl3baConsistencyStrategy)
 
 from pyco.nuxmv import (NuxmvRefinementStrategy, NuxmvCompatibilityStrategy,
-                         NuxmvConsistencyStrategy)
+                         NuxmvConsistencyStrategy, NuxmvApproximationStrategy)
 from abc import ABCMeta, abstractmethod
 from pyco import LOG
 
@@ -64,6 +64,48 @@ def verify_refinement(refined, abstract, refinement_mapping=None, strategy_obj=N
         raise NotARefinementError(refinement_mapping)
 
 
+
+def verify_approximation(approximate, more_defined, approximation_mapping=None, strategy_obj=None):
+    '''
+    Verifies that refined refines abstract.
+
+    :returns: boolean
+    '''
+    if approximation_mapping is None:
+        approximation_mapping = ApproximationMapping([more_defined, approximate])
+    #get copies
+    contract_copies, mapping_copy = approximation_mapping.get_mapping_copies()
+
+    defined_copy = contract_copies[more_defined]
+    approximate_copy = contract_copies[approximate]
+
+
+    #connect ports previously connected and not in the mapping
+    #TODO
+    #inefficient
+    for port_a in more_defined.ports_dict.values():
+        for port_b in approximate.ports_dict.values():
+            if port_a.is_connected_to(port_b):
+                defined_copy.connect_to_port(defined_copy.ports_dict[port_a.base_name],
+                                     approximate_copy.ports_dict[port_b.base_name])
+
+    #connect ports according to mapping relation
+    for (port_a, port_b) in mapping_copy.mapping:
+        port_a.contract.connect_to_port(port_a, port_b)
+
+    #If a strategy is not defined, uses Nuxmv
+    if strategy_obj is None:
+        strategy_obj = NuxmvApproximationStrategy(approximate_copy, delete_files=False)
+
+    #LOG.debug('refinement')
+    #LOG.debug(refined)
+    #LOG.debug(refined_copy)
+    #LOG.debug(abstract)
+    #LOG.debug(abstract_copy)
+    #LOG.debug(refined_copy.assume_formula.generate())
+
+    if not strategy_obj.check_approximation(defined_copy):
+        raise NotAnApproximationError(defined_copy)
 
 class Port(Observer):
     '''
@@ -561,6 +603,23 @@ class Contract(object):
         else:
             return True
 
+    def is_approximation(self, more_defined_contract, approximation_mapping=None, strategy_obj=None):
+        '''
+        Checks whether the calling contract refines abstract_contract
+
+        :returns: boolean
+        '''
+        #TODO
+        #move these methods (also consistency and compatibility)
+        #to module level
+        try:
+            verify_approximation(self, more_defined_contract, approximation_mapping=approximation_mapping,
+                              strategy_obj=strategy_obj)
+        except NotAnApproximationError:
+            return False
+        else:
+            return True
+
     def is_consistent(self, strategy_obj=None):
         '''
         Returns True if the contract is consistent. False otherwise.
@@ -870,6 +929,12 @@ class RefinementMapping(object):
 
 PortMapping.register(RefinementMapping)
 
+class ApproximationMapping(RefinementMapping):
+    '''
+    mapping for ApproximationMapping
+    '''
+    pass
+
 class CompositionMapping(object):
     '''
     Collects the information abou port mapping during a contract composition.
@@ -1106,5 +1171,11 @@ class PortConnectionError(Exception):
 class NotARefinementError(Exception):
     '''
     Raised in case of wrong refinement assertion
+    '''
+    pass
+
+class NotAnApproximationError(Exception):
+    '''
+    Raised in case of wrong approximation assertion
     '''
     pass

@@ -5,7 +5,7 @@ Author: Antonio Iannopollo
 '''
 
 from pyco.interface_strategy import (RefinementStrategy,
-            CompatibilityStrategy, ConsistencyStrategy)
+            CompatibilityStrategy, ConsistencyStrategy, ApproximationStrategy)
 from tempfile import NamedTemporaryFile
 from subprocess import check_output
 from pyco.formula import Negation, Implication, Conjunction
@@ -254,3 +254,65 @@ class NuxmvConsistencyStrategy(NuxmvContractInterface):
 
 
 ConsistencyStrategy.register(NuxmvConsistencyStrategy)
+
+
+class NuxmvApproximationStrategy(NuxmvContractInterface):
+    '''
+    Interface with nuxmv for approximation check
+    '''
+
+    def __init__(self, contract, tool_location=NuxmvPathLoader.get_path(), delete_files=True):
+        '''
+        override constructor
+        '''
+        self.delete_files = delete_files
+
+        super(NuxmvApproximationStrategy, self).__init__(contract, tool_location)
+
+    def check_approximation(self, more_defined_contract):
+        '''
+        Override of abstract method
+        '''
+        contract_name = self.contract.name_attribute.unique_name
+        #create formulae to be checked
+        assumption_check_formula = self._get_assumptions_check_formula(more_defined_contract)
+        guarantee_check_formula = self._get_guarantee_check_formula(more_defined_contract)
+
+
+        both_formulas = Conjunction(assumption_check_formula, guarantee_check_formula)
+
+        #check both formulas
+        output = verify_tautology(both_formulas, \
+                    prefix='%s_assumptions_nuxmv_' % contract_name, \
+                    tool_location=self.tool_location, \
+                    delete_file=self.delete_files)
+
+
+        return output
+
+    def _get_assumptions_check_formula(self, more_defined_contract):
+        '''
+        Returns a string representing the implication of the two contracts
+        assumptions:
+        more_defined_contract.assumption -> approximate_contract.assumption
+        '''
+
+        more_defined_assume = more_defined_contract.assume_formula
+        approximate_assume = self.contract.assume_formula
+
+        return Implication(more_defined_assume, approximate_assume, merge_literals=False)
+
+    def _get_guarantee_check_formula(self, more_defined_contract):
+        '''
+        Returns a string representing the implication of the two contracts
+        assumptions:
+        more_defined_contract.assumption -> approximate_contract.assumption
+        '''
+
+        more_defined_guarantee = more_defined_contract.guarantee_formula
+        approximate_guarantee = self.contract.guarantee_formula
+
+        return Implication(more_defined_guarantee, approximate_guarantee, merge_literals=False)
+
+
+ApproximationStrategy.register(NuxmvApproximationStrategy)

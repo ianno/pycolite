@@ -62,3 +62,22 @@ class ConsistencyStrategy:
 
         '''
         raise NotImplementedError
+
+class ApproximationStrategy:
+    '''
+    Metaclass defining the approximation strategy operations
+    '''
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def check_approximation(self, more_defined_contract):
+        '''
+        Checks if approximate_contract approximates more_defined_contract.
+        A contract C1 approximates a contract C2 if the assumptions of C2 are
+        included in C1 assumptions and if C2 guaratees are included in C1
+        guarantees
+
+        :returns: boolean
+        '''
+        raise NotImplementedError
