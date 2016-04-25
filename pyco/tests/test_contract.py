@@ -303,20 +303,6 @@ def test_composition(contract_1, contract_2):
     print contract_1
     print contract_2
 
-
-    #print contract_2.assume_formula.unroll_1step().generate()
-    #print contract_2.guarantee_formula.unroll_1step().generate()
-    print 'C2'
-    print contract_2.assume_formula.unroll_nsteps(3).generate()
-    print contract_2.guarantee_formula.unroll_nsteps(3).generate()
-
-    #print contract_3.assume_formula.unroll_1step().generate()
-    #print contract_3.guarantee_formula.unroll_1step().generate()
-
-    print 'C2'
-    print contract_3.assume_formula.unroll_nsteps(3).generate()
-    print contract_3.guarantee_formula.unroll_nsteps(3).generate()
-
     #a is not input anymore and b is merged
     assert len(contract_3.input_ports_dict) == \
             len(contract_1.input_ports_dict) + \
