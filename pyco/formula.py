@@ -18,6 +18,9 @@ PRECEDENCE_TUPLE = (
     ('left', 'AND', 'OR'),
     ('left', 'UNTIL', 'RELEASE', 'WEAK_UNTIL'),
     ('right', 'GLOBALLY', 'EVENTUALLY'),
+    ('left', 'GE', 'GEQ', 'LE', 'LEQ'),
+    ('left', 'ADD', 'SUB'),
+    ('left', 'MUL', 'DIV'),
     ('right', 'NOT', 'NEXT'),
 )
 
@@ -203,6 +206,28 @@ class FalseFormula(LTLFormula):
 
     Symbol = 'FALSE'
 
+
+class Constant(LTLFormula):
+    '''
+    doc
+    '''
+
+    value = None
+
+    def __init__(self, value):
+        '''
+        instantiate a new constant.
+
+        '''
+        LTLFormula.__init__(self)
+        self.value = value
+
+
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precendence=False):
+        '''
+        doc
+        '''
+        return self.value
 
 
 class BinaryFormula(LTLFormula):
@@ -550,6 +575,53 @@ class Negation(UnaryFormula):
     Symbol = 'NOT'
 
 
+class Addition(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'ADD'
+
+class Subtraction(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'SUB'
+
+class Multiplication(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'MUL'
+
+class Division(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'DIV'
+
+class Ge(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'GE'
+
+class Geq(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'GEQ'
+
+class Le(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'LE'
+
+class Leq(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'LEQ'
 
 class InvalidFormulaException(Exception):
     '''

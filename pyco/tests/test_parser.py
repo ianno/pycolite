@@ -6,7 +6,11 @@ from pyco.parser.parser import Parser, GeneralError
 def parser():
     return Parser()
 
-@pytest.fixture(params=["hello | test -> h & Xe & (v|e & (sss -> q))", "x|y", "G(this & (is) | a & !X(correct & formula)) -> F(everything & is | fine) "])
+@pytest.fixture(params=["hello + 2  | test -> h & Xe & (v|e & (sss -> q))", "x|y", "G(this & (is) | a & !X(correct & formula)) -> F(everything & is | fine)",
+"G(x > 3)",
+"G(x = 3)",
+"FG(y = 2)",
+"G(x > 3) & FG(y = 2)"])
 def test_formula(request):
     return request.param
 
@@ -35,16 +39,16 @@ def test_parser_string(wrong_string, parser):
        assert False
 
 
-@pytest.fixture()
-def string_formula():
-    return "G(this & (is) | a & !X(correct & formula)) -> F(everything & is | fine) "
+# @pytest.fixture()
+# def string_formula():
+#     return "G(this & (is) | a & !X(correct & formula)) -> F(everything & is | fine) "
 
-def test_str_formula(string_formula, parser):
+def test_str_formula(test_formula, parser):
     '''
     test a formula from a valid string
     '''
     try:
-        formula = parser.parse(string_formula)
+        formula = parser.parse(test_formula)
     except Exception as error:
         print 'here %s' % error
         assert False
@@ -64,5 +68,3 @@ def test_object(random_object, parser):
         assert True
     else:
         assert False
-
-

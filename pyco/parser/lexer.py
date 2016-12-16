@@ -1,8 +1,7 @@
 import ply.lex as lex
 import re
 
-import logging
-LOG = logging.getLogger()
+from pyco import LOG
 
 class BaseSymbolSet(object):
     '''
@@ -18,20 +17,30 @@ class BaseSymbolSet(object):
         'RELEASE' : r'R',
         'WEAK_UNTIL' : r'W',
         'IMPLICATION' : r'->',
-        'EQUALITY' : r'<->',
+        'EQUALITY' : r'=',
         'NOT' : r'!',
         'TRUE' : r'true',
         'FALSE' : r'false',
         'LPAREN' : r'(',
-        'RPAREN' : r')'
+        'RPAREN' : r')',
+        'GE' : r'>',
+        'GEQ' : r'>=',
+        'LE' : r'<',
+        'LEQ' : r'<=',
+        'ADD' : r'+',
+        'SUB' : r'-',
+        'MUL' : r'*',
+        'DIV' : r'/'
         }
 
 class Lexer(object):
 
 
-    tokens = ['LITERAL', 'AND', 'OR', 'NOT', 'IMPLICATION', 'EQUALITY',
+    tokens = ['LITERAL', 'CONSTANT', 'AND', 'OR',
+        'NOT', 'IMPLICATION', 'EQUALITY',
         'GLOBALLY', 'EVENTUALLY', 'NEXT', 'UNTIL', 'RELEASE',
-        'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE']
+        'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE',
+        'GE', 'GEQ', 'LE', 'LEQ', 'ADD', 'SUB', 'MUL', 'DIV']
 
 
     def t_COMMENT(self, t):
@@ -51,18 +60,23 @@ class Lexer(object):
         t.type = self.reserved.get(t.value, 'LITERAL')
         return t
 
+    def t_CONSTANT(self, t):
+        r'\d+'
+        t.type = self.reserved.get(t.value, 'CONSTANT')
+        return t
+
     def __init__(self, symbol_set_cls=BaseSymbolSet):
 
         self.symbol_set_cls = symbol_set_cls
         self.reserved = {key:value for (value,key) in
                          symbol_set_cls.symbols.items()}
 
-        self.t_ignore = ' \t'
+        self.t_ignore = " \t\n"
         self.t_AND = symbol_set_cls.symbols['AND']
         self.t_OR =  re.escape(symbol_set_cls.symbols['OR'])
         self.t_NOT = symbol_set_cls.symbols['NOT']
         self.t_IMPLICATION = symbol_set_cls.symbols['IMPLICATION']
-        self.t_EQUALITY = symbol_set_cls.symbols['EQUALITY']
+        self.t_EQUALITY = re.escape(symbol_set_cls.symbols['EQUALITY'])
         self.t_GLOBALLY= symbol_set_cls.symbols['GLOBALLY']
         self.t_EVENTUALLY= symbol_set_cls.symbols['EVENTUALLY']
         self.t_NEXT = symbol_set_cls.symbols['NEXT']
@@ -73,6 +87,14 @@ class Lexer(object):
         self.t_RPAREN = re.escape(symbol_set_cls.symbols['RPAREN'])
         self.t_TRUE = symbol_set_cls.symbols['TRUE']
         self.t_FALSE = symbol_set_cls.symbols['FALSE']
+        self.t_GE = re.escape(symbol_set_cls.symbols['GE'])
+        self.t_GEQ = re.escape(symbol_set_cls.symbols['GEQ'])
+        self.t_LE = re.escape(symbol_set_cls.symbols['LE'])
+        self.t_LEQ = re.escape(symbol_set_cls.symbols['LEQ'])
+        self.t_ADD = re.escape(symbol_set_cls.symbols['ADD'])
+        self.t_SUB = re.escape(symbol_set_cls.symbols['SUB'])
+        self.t_MUL = re.escape(symbol_set_cls.symbols['MUL'])
+        self.t_SUB = re.escape(symbol_set_cls.symbols['DIV'])
         #self.t_LITERAL = r'[a-z_][a-zA-Z0-9_]*'
 
         self.__build()

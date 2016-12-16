@@ -22,12 +22,20 @@ class Ltl3baSymbolSet(object):
         'RELEASE' : r'R',
         'WEAK_UNTIL' : r'W',
         'IMPLICATION' : r'->',
-        'EQUALITY' : r'<->',
+        'EQUALITY' : r'=',
         'NOT' : r'!',
         'TRUE' : r'true',
         'FALSE' : r'false',
         'LPAREN' : '(',
-        'RPAREN' : ')'
+        'RPAREN' : ')',
+        'GE' : r'>',
+        'GEQ' : r'>=',
+        'LE' : r'<',
+        'LEQ' : r'<=',
+        'ADD' : r'+',
+        'SUB' : r'-',
+        'MUL' : r'*',
+        'DIV' : r'/'
         }
 
 class NusmvSymbolSet(object):
@@ -53,6 +61,13 @@ class NusmvSymbolSet(object):
         'TRUE' : r'TRUE',
         'FALSE' : r'FALSE',
         'LPAREN' : '(',
-        'RPAREN' : ')'
+        'RPAREN' : ')',
+        'GE' : '>',
+        'GEQ' : '>=',
+        'LE' : '<',
+        'LEQ' : '<=',
+        'ADD' : '+',
+        'SUB' : '-',
+        'MUL' : '*',
+        'DIV' : '/'
         }
-
