@@ -12,7 +12,7 @@ from pyco.attribute import Attribute
 #from abc import abstractmethod
 from pyco.observer import Observer
 from pyco import LOG
-from pyco.symbol_sets import BOOL_TYPE
+from pyco.types import Bool
 
 PRECEDENCE_TUPLE = (
     ('left', 'IMPLICATION'),
@@ -151,7 +151,7 @@ class Literal(Attribute, LTLFormula):
     is_literal = True
     l_type = None
 
-    def __init__(self, base_name, l_type=BOOL_TYPE, context=None):
+    def __init__(self, base_name, l_type=Bool(), context=None):
         '''
         instantiate a new literal.
 

@@ -4,8 +4,6 @@ This module contains all the symbol sets used to interface with external tools
 Author: Antonio Iannopollo
 '''
 
-BOOL_TYPE = 'BOOL'
-INT_TYPE = 'INT'
 
 class Ltl3baSymbolSet(object):
     '''

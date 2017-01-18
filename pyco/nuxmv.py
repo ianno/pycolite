@@ -14,7 +14,7 @@ from ConfigParser import SafeConfigParser
 from pyco.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
 import os
 from pyco import LOG
-from pyco.symbol_sets import BOOL_TYPE, INT_TYPE
+from pyco.types import Bool, Int
 
 #OPT_NUXMV = '-coi'
 CMD_OPT = '-dcx'
@@ -104,10 +104,10 @@ def verify_tautology(formula, prefix='',
     #LOG.debug(literals)
     var_list = []
     for l in literals:
-        if l.l_type == BOOL_TYPE:
+        if isinstance(l.l_type, Bool):
             var_list.append('\t%s: boolean;\n' %l.unique_name)
-        elif l.l_type == INT_TYPE:
-            var_list.append('\t%s: 0..10;\n' %l.unique_name)
+        elif isinstance(l.l_type, Int):
+            var_list.append('\t%s: %d..%d;\n' % (l.unique_name, l.l_type.lower, l.l_type.upper))
 
     var_list = set(var_list)
     #var_list = set(['\t%s: boolean;\n' %l.unique_name for l in literals])

@@ -17,7 +17,7 @@ from pyco.nuxmv import (NuxmvRefinementStrategy, NuxmvCompatibilityStrategy,
                          NuxmvConsistencyStrategy, NuxmvApproximationStrategy)
 from abc import ABCMeta, abstractmethod
 from pyco import LOG
-from pyco.symbol_sets import BOOL_TYPE
+from pyco.types import Int, Bool
 
 LOG.debug('in contract.py')
 
@@ -119,7 +119,7 @@ class Port(Observer):
     keeps constant its base name
     '''
 
-    def __init__(self, base_name, l_type=BOOL_TYPE, contract=None, literal=None, context=None):
+    def __init__(self, base_name, l_type=Bool(), contract=None, literal=None, context=None):
         '''
         Creates a new port and associates a literal.
         If no literal is provided, a new one will be created.
@@ -364,15 +364,16 @@ class Contract(object):
             #check for types
             temp_list = []
             for elem in input_ports:
-                if isinstance(elem, (list, tuple)) and len(elem) >= 2:
+                if isinstance(elem, (list, tuple)) and len(elem) >= 3:
                     name = elem[0]
-                    l_type = elem[1]
+                    lower = elem[1]
+                    upper = elem[2]
 
-                    self.type_dir[name] = l_type
+                    self.type_dir[name] = Int(lower, upper)
 
                     temp_list.append(name)
                 else:
-                    self.type_dir[elem] = BOOL_TYPE
+                    self.type_dir[elem] = Bool()
                     temp_list.append(elem)
 
             input_ports = set(temp_list)
@@ -401,15 +402,16 @@ class Contract(object):
             #check for types
             temp_list = []
             for elem in output_ports:
-                if isinstance(elem, (list, tuple)) and len(elem) >= 2:
+                if isinstance(elem, (list, tuple)) and len(elem) >= 3:
                     name = elem[0]
-                    l_type = elem[1]
+                    lower = elem[1]
+                    upper = elem[2]
 
-                    self.type_dir[name] = l_type
+                    self.type_dir[name] = Int(lower, upper)
 
                     temp_list.append(name)
                 else:
-                    self.type_dir[elem] = BOOL_TYPE
+                    self.type_dir[elem] = Bool()
                     temp_list.append(elem)
 
             output_ports = set(temp_list)
@@ -735,14 +737,14 @@ class Contract(object):
 
         for base_name, port in self.input_ports_dict.items():
 
-            description.append('\t\t%s ( %s )\n' % \
-                    (port.unique_name, base_name))
+            description.append('\t\t%s ( %s ) : %s\n' % \
+                    (port.unique_name, base_name, port.l_type))
 
         description.append('\tOutput ports:\n')
 
         for base_name, port in self.output_ports_dict.items():
-            description.append('\t\t%s ( %s )\n' % \
-                    (port.unique_name, base_name))
+            description.append('\t\t%s ( %s ) : %s\n' % \
+                    (port.unique_name, base_name, port.l_type))
 
         description.append('\tAssumption\n')
         description.append('\t\t%s\n' % \
