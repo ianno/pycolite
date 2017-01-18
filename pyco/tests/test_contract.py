@@ -32,20 +32,20 @@ def test_constructor(basic_params):
 
 @pytest.fixture()
 def contract_1():
-    input_p = set(('a','b','c'))
+    input_p = set(('a',('b', 'INT'),'c'))
     output_p = set(('d', 'e'))
 
-    assume = 'b & X(b) -> FX!(G(a|b) & F(c))'
+    assume = 'b=1 & X(b>3) -> FX!(G(a|b=0) & F(c))'
     guarantee = 'd & XXXc -> GF(e&d)'
 
     return Contract('C1', input_p, output_p, assume, guarantee, saturated=False)
 
 @pytest.fixture()
 def contract_2():
-    input_p = set(('f','b','c'))
+    input_p = set(('f',('b', 'INT'),'c'))
     output_p = set(('g', 'e'))
 
-    assume = 'G(f & b & Xb | XXc)'
+    assume = 'G(f & b=5 & X(b=0) | XXc)'
     guarantee = 'F(g|e)'
 
     return Contract('C2', input_p, output_p, assume, guarantee, saturated=False)

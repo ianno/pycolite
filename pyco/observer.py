@@ -58,6 +58,3 @@ class Observer(object):
     def update(self, updated_subject):
         '''receive an update from a subject'''
         pass
-
-
-

@@ -12,13 +12,14 @@ from pyco.attribute import Attribute
 #from abc import abstractmethod
 from pyco.observer import Observer
 from pyco import LOG
+from pyco.symbol_sets import BOOL_TYPE
 
 PRECEDENCE_TUPLE = (
-    ('left', 'IMPLICATION', 'EQUALITY'),
+    ('left', 'IMPLICATION'),
     ('left', 'AND', 'OR'),
     ('left', 'UNTIL', 'RELEASE', 'WEAK_UNTIL'),
     ('right', 'GLOBALLY', 'EVENTUALLY'),
-    ('left', 'GE', 'GEQ', 'LE', 'LEQ'),
+    ('left', 'GE', 'GEQ', 'LE', 'LEQ', 'EQUALITY'),
     ('left', 'ADD', 'SUB'),
     ('left', 'MUL', 'DIV'),
     ('right', 'NOT', 'NEXT'),
@@ -127,7 +128,7 @@ class LTLFormula(Observer):
         '''
 
         for key, value in self.get_literal_items():
-            new_literal = Literal(key, value.context)
+            new_literal = Literal(key, l_type=value.l_type, context=value.context)
             value.merge(new_literal)
 
 
@@ -148,8 +149,9 @@ class Literal(Attribute, LTLFormula):
     '''
 
     is_literal = True
+    l_type = None
 
-    def __init__(self, base_name, context=None):
+    def __init__(self, base_name, l_type=BOOL_TYPE, context=None):
         '''
         instantiate a new literal.
 
@@ -161,6 +163,7 @@ class Literal(Attribute, LTLFormula):
         '''
         LTLFormula.__init__(self)
         Attribute.__init__(self, base_name, context)
+        self.l_type = l_type
 
         self.attach(self)
         self.literals[base_name] = self
@@ -182,12 +185,14 @@ class Literal(Attribute, LTLFormula):
         Implementation of the update method from a attribute according to
         the observer pattern
         '''
-
+        #assert self.l_type == updated_subject.l_type
         updated_attribute = updated_subject.get_state()
 
         super(Literal, self).update(updated_subject)
 
         self.unique_name = updated_attribute.unique_name
+        self.l_type = updated_subject.l_type
+
 
 
 class TrueFormula(LTLFormula):

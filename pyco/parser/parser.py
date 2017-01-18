@@ -31,7 +31,7 @@ class Parser(object):
 
     def p_expr_or(self, p):
         '''expr : expr OR expr'''
-        LOG.debug(p[1])
+        #LOG.debug(p[1])
         p[0] = formula.Disjunction(p[1], p[3])
 
     def p_expr_not(self, p):
@@ -85,12 +85,12 @@ class Parser(object):
     def p_prop_literal(self, p):
         '''prop : LITERAL'''
         #add more here on literals
-        LOG.debug(p[1])
-        p[0] = formula.Literal(p[1], self.context)
+        #LOG.debug(p[1])
+        p[0] = formula.Literal(p[1], context=self.context)
 
     def p_prop_constant(self, p):
         '''prop : CONSTANT'''
-        print p[1]
+        #print p[1]
         p[0] = formula.Constant(p[1])
 
     def p_expr_parenthesis(self, p):

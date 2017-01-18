@@ -17,6 +17,7 @@ from pyco.nuxmv import (NuxmvRefinementStrategy, NuxmvCompatibilityStrategy,
                          NuxmvConsistencyStrategy, NuxmvApproximationStrategy)
 from abc import ABCMeta, abstractmethod
 from pyco import LOG
+from pyco.symbol_sets import BOOL_TYPE
 
 LOG.debug('in contract.py')
 
@@ -34,6 +35,11 @@ def verify_refinement(refined, abstract, refinement_mapping=None, strategy_obj=N
 
     refined_copy = contract_copies[refined]
     abstract_copy = contract_copies[abstract]
+
+    # LOG.debug(refined_copy.type_dir)
+    # for p in refined_copy.ports_dict.values():
+    #     LOG.debug(p.base_name)
+    #     LOG.debug(p.literal.l_type)
 
 
     #connect ports previously connected and not in the mapping
@@ -113,7 +119,7 @@ class Port(Observer):
     keeps constant its base name
     '''
 
-    def __init__(self, base_name, contract=None, literal=None, context=None):
+    def __init__(self, base_name, l_type=BOOL_TYPE, contract=None, literal=None, context=None):
         '''
         Creates a new port and associates a literal.
         If no literal is provided, a new one will be created.
@@ -130,6 +136,7 @@ class Port(Observer):
 
 
         self.base_name = base_name
+        self.l_type = l_type
         self.context = context
 
         self._contract = contract
@@ -137,7 +144,7 @@ class Port(Observer):
         #self.contract = contract
 
         if literal is None:
-            literal = Literal(base_name, context)
+            literal = Literal(base_name, l_type=l_type, context=context)
 
         self.literal = literal
         #import pdb
@@ -170,6 +177,11 @@ class Port(Observer):
         Merges the current port literal with another port or literal
         '''
 
+        assert self.l_type == port.l_type
+
+        LOG.debug(self.literal.l_type)
+        LOG.debug(port.literal.l_type)
+
         if self.literal != port.literal:
             self.literal.merge(port.literal)
         else:
@@ -191,7 +203,7 @@ class Port(Observer):
         '''
         Generate a new unique _name and propagates it
         '''
-        new_literal = Literal(self.literal.base_name, self.context)
+        new_literal = Literal(self.literal.base_name, l_type=self.l_type, context=self.context)
 
         self.literal.merge(new_literal)
 
@@ -300,6 +312,8 @@ class Contract(object):
 
         self.infer_ports = infer_ports
 
+        self.type_dir = {}
+
         #first, we need to retrieve formulas and literals from formulas
         #possibilities are that formulae will be either string or LTLFormula
         #object
@@ -337,12 +351,38 @@ class Contract(object):
         try:
             self.input_ports_dict = \
                     {key: value for (key, value) in input_ports.items()}
+
+            if any([isinstance(val, str)
+                    for val in self.input_ports_dict.values()]):
+                raise AttributeError
+
         #in case input_ports is a list of string, we'll try to match
         #literals in the formula
         except AttributeError:
             input_ports = set(input_ports)
+
+            #check for types
+            temp_list = []
+            for elem in input_ports:
+                if isinstance(elem, (list, tuple)) and len(elem) >= 2:
+                    name = elem[0]
+                    l_type = elem[1]
+
+                    self.type_dir[name] = l_type
+
+                    temp_list.append(name)
+                else:
+                    self.type_dir[elem] = BOOL_TYPE
+                    temp_list.append(elem)
+
+            input_ports = set(temp_list)
+
+
             self.input_ports_dict = {key : None for key in input_ports}
         else:
+            #set_types
+            for (key, value) in input_ports.items():
+                self.type_dir[key] = value.l_type
             #register this contract as the port owner
             for port in self.input_ports_dict.viewvalues():
                 port.contract = self
@@ -350,12 +390,36 @@ class Contract(object):
         try:
             self.output_ports_dict = \
                     {key: value for (key, value) in output_ports.items()}
+
+            if any([isinstance(val, str) for val in self.output_ports_dict.values()]):
+                raise AttributeError
         #in case input_ports is a list of string, we'll try to match
         #literals in the formula
         except AttributeError:
             output_ports = set(output_ports)
+
+            #check for types
+            temp_list = []
+            for elem in output_ports:
+                if isinstance(elem, (list, tuple)) and len(elem) >= 2:
+                    name = elem[0]
+                    l_type = elem[1]
+
+                    self.type_dir[name] = l_type
+
+                    temp_list.append(name)
+                else:
+                    self.type_dir[elem] = BOOL_TYPE
+                    temp_list.append(elem)
+
+            output_ports = set(temp_list)
+
+
             self.output_ports_dict = {key : None for key in output_ports}
         else:
+            #set_types
+            for (key, value) in output_ports.items():
+                self.type_dir[key] = value.l_type
             #register this contract as the port owner
             for port in self.output_ports_dict.viewvalues():
                 port.contract = self
@@ -370,14 +434,17 @@ class Contract(object):
             if port_dict[literal_name] is None:
                 #try to associate by base_name
                 if literal_name in self.formulae_dict:
+                    #update type
+                    self.formulae_dict[literal_name].l_type = self.type_dir[literal_name]
+
                     port_dict[literal_name] = \
-                        Port(literal_name, contract=self, literal=\
+                        Port(literal_name, l_type=self.type_dir[literal_name], contract=self, literal=\
                         self.formulae_dict[literal_name], \
                         context=self.context)
                 #otherwise create new Port
                 else:
                     port_dict[literal_name] = \
-                        Port(literal_name, contract=self, context=self.context)
+                        Port(literal_name, l_type=self.type_dir[literal_name], contract=self, context=self.context)
 
             ##observer pattern - attach to the subject
             #port_dict[literal_name].attach(self)
@@ -402,6 +469,7 @@ class Contract(object):
         #assumptions and guarantees which do not match ports
 
 
+        #LOG.debug(self.type_dir)
         #sometimes some literals in formulae do not have a match
         #we can try to match them with known ports based on their base_name
         if self.infer_ports:
@@ -411,6 +479,7 @@ class Contract(object):
                 literals = self.formulae_reverse_dict[key]
                 for literal in literals:
                     try:
+                        literal.l_type = self.ports_dict[literal.base_name].l_type
                         literal.merge(self.ports_dict[literal.base_name].literal)
                     except KeyError:
                         raise PortMappingError(key)
@@ -450,19 +519,27 @@ class Contract(object):
         #create ports
         new_inputs = {}
         for name, port in self.input_ports_dict.items():
+
             if port.unique_name in literals:
-                new_inputs[name] = Port(name,
+                #set types
+                literals[port.unique_name].l_type = port.l_type
+
+                new_inputs[name] = Port(name, l_type=port.l_type,
                                     literal=literals[port.unique_name])
             else:
-                new_inputs[name] = Port(name)
+                new_inputs[name] = Port(name,l_type=port.l_type)
+
 
         new_outputs = {}
         for name, port in self.output_ports_dict.items():
             if port.unique_name in literals:
-                new_outputs[name] = Port(name,
+                #set types
+                literals[port.unique_name].l_type = port.l_type
+
+                new_outputs[name] = Port(name, l_type=port.l_type,
                                     literal=literals[port.unique_name])
             else:
-                new_outputs[name] = Port(name)
+                new_outputs[name] = Port(name, l_type=port.l_type)
 
         new_contract = type(self)(new_name, new_inputs, new_outputs, new_assumptions,
                                     new_guarantees, self.symbol_set_cls, self.context,
@@ -1078,25 +1155,29 @@ class CompositionMapping(object):
                 raise PortConnectionError('cannot connect multiple outputs')
             else:
                 #merge port literals
-                port = reduce(lambda x, y: x.merge(y), port_set)
+                #LOG.debug([p.unique_name + ':'+p.l_type + ':'+p.literal.l_type for p in port_set])
+                port = port_set.pop()
+                for p in port_set:
+                    port.merge(p)
+                #port = reduce(lambda x, y: x.merge(y), port_set)
 
                 if len(outputs) == 0:
                     #all inputs -> input
-                    new_input_ports[name] = Port(name, literal=port.literal, context=self.context)
+                    new_input_ports[name] = Port(name, l_type = port.l_type, literal=port.literal, context=self.context)
                 else:
                     #1 output -> output
-                    new_output_ports[name] = Port(name, literal=port.literal, context=self.context)
+                    new_output_ports[name] = Port(name, l_type = port.l_type, literal=port.literal, context=self.context)
 
 
         #complete with implicit ports from contracts
         #we have disjoint ports or ports which have been previously connected
         #however we are sure, from the previous step, that there are not conflicting
         #port names
-        input_pool = {name: Port(name, literal=port.literal, context=self.context)#port
+        input_pool = {name: Port(name, l_type = port.l_type, literal=port.literal, context=self.context)#port
                       for contract in self.contracts
                       for (name, port) in contract.input_ports_dict.viewitems()}
 
-        output_pool = {name: Port(name, literal=port.literal, context=self.context)#port
+        output_pool = {name: Port(name, l_type = port.l_type, literal=port.literal, context=self.context)#port
                        for contract in self.contracts
                        for (name, port) in contract.output_ports_dict.viewitems()}
 
@@ -1115,15 +1196,16 @@ class CompositionMapping(object):
         for name in filtered_inputs:
             #also, check for feedback loops or connected I/O and do not add inputs in case
             if not any([input_pool[name].is_connected_to(port) for port in output_pool.viewvalues()]):
-                new_input_ports[name] = Port(name, literal=input_pool[name].literal,
+                new_input_ports[name] = Port(name, l_type = input_pool[name].l_type, literal=input_pool[name].literal,
                                              context=self.context)
         for name in implicit_output_names:
-            new_output_ports[name] = Port(name, literal=output_pool[name].literal,
+            new_output_ports[name] = Port(name, l_type = output_pool[name].l_type, literal=output_pool[name].literal,
                                           context=self.context)
 
 
         #import pdb
         #pdb.set_trace()
+
         return (new_input_ports, new_output_ports)
 
 

@@ -4,6 +4,9 @@ This module contains all the symbol sets used to interface with external tools
 Author: Antonio Iannopollo
 '''
 
+BOOL_TYPE = 'BOOL'
+INT_TYPE = 'INT'
+
 class Ltl3baSymbolSet(object):
     '''
     Spin symbol class
@@ -56,18 +59,18 @@ class NusmvSymbolSet(object):
         'RELEASE' : r'V',
         'WEAK_UNTIL' : r'W',
         'IMPLICATION' : r'->',
-        'EQUALITY' : r'<->',
+        'EQUALITY' : r'=',
         'NOT' : r'!',
         'TRUE' : r'TRUE',
         'FALSE' : r'FALSE',
         'LPAREN' : '(',
         'RPAREN' : ')',
-        'GE' : '>',
-        'GEQ' : '>=',
-        'LE' : '<',
-        'LEQ' : '<=',
-        'ADD' : '+',
-        'SUB' : '-',
-        'MUL' : '*',
-        'DIV' : '/'
+        'GE' : r'>',
+        'GEQ' : r'>=',
+        'LE' : r'<',
+        'LEQ' : r'<=',
+        'ADD' : r'+',
+        'SUB' : r'-',
+        'MUL' : r'*',
+        'DIV' : r'/'
         }
