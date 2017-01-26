@@ -179,8 +179,8 @@ class Port(Observer):
 
         assert self.l_type == port.l_type
 
-        LOG.debug(self.literal.l_type)
-        LOG.debug(port.literal.l_type)
+        # LOG.debug(self.literal.l_type)
+        # LOG.debug(port.literal.l_type)
 
         if self.literal != port.literal:
             self.literal.merge(port.literal)
