@@ -4,7 +4,7 @@ This module define a generic version of the observer design pattern
 Author: Antonio Iannopollo
 '''
 from abc import ABCMeta, abstractmethod
-from pyco import LOG
+from pycolite import LOG
 
 class Subject:
     '''

@@ -1,8 +1,8 @@
-from pyco import formula
-from pyco.parser import lexer
+from pycolite import formula
+from pycolite.parser import lexer
 import ply.yacc as yacc
 
-from pyco import LOG
+from pycolite import LOG
 
 
 class Parser(object):

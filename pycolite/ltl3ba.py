@@ -4,16 +4,16 @@ This module inlcudes all the classes and operations related to ltl3ba
 Author: Antonio Iannopollo
 '''
 
-from pyco.interface_strategy import RefinementStrategy, \
+from pycolite.interface_strategy import RefinementStrategy, \
             CompatibilityStrategy, ConsistencyStrategy
 from tempfile import NamedTemporaryFile
 from subprocess import check_output
-from pyco.formula import Negation, Implication
-from pyco.symbol_sets import Ltl3baSymbolSet
+from pycolite.formula import Negation, Implication
+from pycolite.symbol_sets import Ltl3baSymbolSet
 from ConfigParser import SafeConfigParser
-from pyco.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, LTL3BA_OPT
+from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, LTL3BA_OPT
 import os
-from pyco import LOG
+from pycolite import LOG
 
 TEMP_FILES_PATH = '/tmp/'
 #LTL3BA_PATH = 'resources/ltl3ba/'

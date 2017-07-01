@@ -8,7 +8,7 @@ This module uses the observer pattern.
 Author: Antonio Iannopollo
 '''
 
-from pyco.observer import Subject
+from pycolite.observer import Subject
 
 class UniqueIdExtractor(object):
     '''

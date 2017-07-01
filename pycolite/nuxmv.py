@@ -4,17 +4,17 @@ This module inlcudes all the classes and operations related to nuxmv
 Author: Antonio Iannopollo
 '''
 
-from pyco.interface_strategy import (RefinementStrategy,
+from pycolite.interface_strategy import (RefinementStrategy,
             CompatibilityStrategy, ConsistencyStrategy, ApproximationStrategy)
 from tempfile import NamedTemporaryFile
-from subprocess import check_output
-from pyco.formula import Negation, Implication, Conjunction
-from pyco.symbol_sets import NusmvSymbolSet
+from subprocess import check_output, STDOUT
+from pycolite.formula import Negation, Implication, Conjunction
+from pycolite.symbol_sets import NusmvSymbolSet
 from ConfigParser import SafeConfigParser
-from pyco.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
+from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
 import os
-from pyco import LOG
-from pyco.types import Bool, Int
+from pycolite import LOG
+from pycolite.types import Bool, Int
 
 #OPT_NUXMV = '-coi'
 CMD_OPT = '-dcx'
@@ -122,7 +122,8 @@ def verify_tautology(formula, prefix='',
         temp_file.seek(0)
 
         #output = check_output([tool_location, CMD_OPT, temp_file.name])
-        output = check_output([tool_location, temp_file.name])
+        output = check_output([tool_location, temp_file.name],
+                              stderr=STDOUT,)
         #LOG.debug(output)
         #LOG.debug(output.endswith(NUXMV_FALSE))
         if output.endswith(NUXMV_TRUE):

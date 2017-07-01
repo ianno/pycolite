@@ -5,9 +5,9 @@ author: Antonio Iannopollo
 '''
 
 import pytest
-from pyco.contract import Contract, PortDeclarationError, PortMappingError, \
+from pycolite.contract import Contract, PortDeclarationError, PortMappingError, \
                         PortConnectionError, CompositionMapping
-from pyco import LOG
+from pycolite import LOG
 
 @pytest.fixture()
 def basic_params():

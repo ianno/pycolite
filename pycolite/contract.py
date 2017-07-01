@@ -4,20 +4,20 @@ Basic implementation of contract
 Author: Antonio Iannopollo
 '''
 
-from pyco.parser.parser import LTL_PARSER
-from pyco.parser.lexer import BaseSymbolSet
-from pyco.attribute import Attribute
-from pyco.formula import Literal, Conjunction, Disjunction, Negation
-from pyco.observer import Observer
+from pycolite.parser.parser import LTL_PARSER
+from pycolite.parser.lexer import BaseSymbolSet
+from pycolite.attribute import Attribute
+from pycolite.formula import Literal, Conjunction, Disjunction, Negation
+from pycolite.observer import Observer
 from copy import deepcopy
-#from pyco.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
+#from pycolite.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
 #                         Ltl3baConsistencyStrategy)
 
-from pyco.nuxmv import (NuxmvRefinementStrategy, NuxmvCompatibilityStrategy,
+from pycolite.nuxmv import (NuxmvRefinementStrategy, NuxmvCompatibilityStrategy,
                          NuxmvConsistencyStrategy, NuxmvApproximationStrategy)
 from abc import ABCMeta, abstractmethod
-from pyco import LOG
-from pyco.types import Int, Bool
+from pycolite import LOG
+from pycolite.types import Int, Bool
 
 LOG.debug('in contract.py')
 
@@ -297,7 +297,7 @@ class Contract(object):
         :param symbol_set_cls: symbol set class, used to decode furmula strings
             and to generate string representation of LTLFormula objects
         :type symbol_set_cls: class, preferably extending
-            pyco.parser.lexer.BaseSymbolSet
+            pycolite-lite-dev.parser.lexer.BaseSymbolSet
         :param context: fomrula context for unique variable naming
         :type context: object
         '''

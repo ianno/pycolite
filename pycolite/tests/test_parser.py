@@ -1,6 +1,6 @@
 import pytest
 
-from pyco.parser.parser import Parser, GeneralError
+from pycolite.parser.parser import Parser, GeneralError
 
 @pytest.fixture(scope = 'session')
 def parser():

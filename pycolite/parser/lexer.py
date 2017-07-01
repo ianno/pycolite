@@ -1,7 +1,7 @@
 import ply.lex as lex
 import re
 
-from pyco import LOG
+from pycolite import LOG
 
 class BaseSymbolSet(object):
     '''

@@ -8,7 +8,7 @@ Author: Antonio Iannopollo
 
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 import os
-import pyco.util.util as util
+import pycolite.util.util as util
 from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError, ParsingError
 import sys
 
@@ -29,19 +29,22 @@ try:
     nuxmv_path = setup_cfg.get(util.TOOL_SECT, util.NUXMV_OPT)
 except (NoSectionError, NoOptionError):
     print 'Error loading nuxmv configuration info'
-    sys.exit(-1)
+    #sys.exit(-1)
 
 nuxmv_path = util.which(nuxmv_path)
 
 if nuxmv_path is None:
     print 'Error, nuxmv path is invalid'
-    sys.exit(-1)
+    #sys.exit(-1)
+else:
+    nuxmv_path = ''
 
 try:
     temp_dir_path = setup_cfg.get(util.PATH_SECT, util.TEMP_OPT)
 except (NoSectionError, NoOptionError):
     print 'Error loading temp dir configuration info'
-    sys.exit(-1)
+    temp_dir_path = ''
+    #sys.exit(-1)
 
 temp_dir_path = os.path.abspath(temp_dir_path)
 #make sure the directory exists
@@ -63,7 +66,7 @@ with open(os.path.join(here, 'DESCRIPTION.md')) as f:
     long_description = f.read()
 
 setup(
-    name='pyco',
+    name='pycolite',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -74,7 +77,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/ianno/pyco',
+    url='https://github.com/ianno/pycolite',
 
     # Author details
     author='Antonio Iannopollo',
