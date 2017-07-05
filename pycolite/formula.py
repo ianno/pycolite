@@ -7,12 +7,12 @@ used for the generation of the LTL specs.
 @author: antonio
 '''
 
-from pyco.parser.lexer import BaseSymbolSet
-from pyco.attribute import Attribute
+from pycolite.parser.lexer import BaseSymbolSet
+from pycolite.attribute import Attribute
 #from abc import abstractmethod
-from pyco.observer import Observer
-from pyco import LOG
-from pyco.types import Bool
+from pycolite.observer import Observer
+from pycolite import LOG
+from pycolite.types import Bool
 
 PRECEDENCE_TUPLE = (
     ('left', 'IMPLICATION'),
@@ -88,7 +88,7 @@ class LTLFormula(Observer):
             #update the literals list
             del self.literals[updated_subject.base_name]
         except KeyError as key:
-            LOG.critical('%s not found.Look into this' % key)
+            LOG.debug('%s not found.Look into this' % key)
             LOG.debug('it may happen for ports. they are observers')
             LOG.debug(self)
             LOG.debug(self.literals)
