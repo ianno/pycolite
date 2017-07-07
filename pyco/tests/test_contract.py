@@ -104,6 +104,18 @@ def contract_future():
 
     return Contract('X', input_p, output_p, assume, guarantee)
 
+@pytest.fixture
+def contract_nextfuture():
+    '''
+    Returns a contract that assumes true and guaratees Fb
+    '''
+
+    input_p = ['a']
+    output_p = ['b']
+    assume = 'Fa'
+    guarantee = 'X!b & Fb'
+
+    return Contract('X', input_p, output_p, assume, guarantee)
 
 @pytest.fixture()
 def c1_compose_c2(contract_1, contract_2):
@@ -414,6 +426,26 @@ def test_not_refinement(contract_next, contract_future):
     contract_future.connect_to_port(contract_future.b, contract_next.b)
 
     assert not contract_future.is_refinement(contract_next)
+
+
+def test_approximation(contract_nextfuture, contract_future):
+    '''
+    contract_future should approximate contract_nextfuture
+    '''
+    contract_future.connect_to_port(contract_future.a, contract_nextfuture.a)
+    contract_future.connect_to_port(contract_future.b, contract_nextfuture.b)
+
+    assert contract_future.is_approximation(contract_nextfuture)
+
+def test_approximation(contract_nextfuture, contract_future):
+    '''
+    contract_nextfuture should not approximate contract_future
+    '''
+    contract_future.connect_to_port(contract_future.a, contract_nextfuture.a)
+    contract_future.connect_to_port(contract_future.b, contract_nextfuture.b)
+
+    assert not contract_nextfuture.is_approximation(contract_future)
+
 
 def test_compatible_ok(contract_1):
     '''

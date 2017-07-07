@@ -8,7 +8,7 @@ Author: Antonio Iannopollo
 
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 import os
-import pyco.util.util as util
+import pycolite.util.util as util
 from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError, ParsingError
 import sys
 
@@ -26,22 +26,25 @@ with open('setup.cfg') as filep:
         sys.exit(-1)
 
 try:
-    ltl3ba_path = setup_cfg.get(util.TOOL_SECT, util.LTL3BA_OPT)
+    nuxmv_path = setup_cfg.get(util.TOOL_SECT, util.NUXMV_OPT)
 except (NoSectionError, NoOptionError):
-    print 'Error loading ltl3ba configuration info'
-    sys.exit(-1)
+    print 'Error loading nuxmv configuration info'
+    #sys.exit(-1)
 
-ltl3ba_path = util.which(ltl3ba_path)
+nuxmv_path = util.which(nuxmv_path)
 
-if ltl3ba_path is None:
-    print 'Error, ltl3ba path is invalid'
-    sys.exit(-1)
+if nuxmv_path is None:
+    print 'Error, nuxmv path is invalid'
+    #sys.exit(-1)
+else:
+    nuxmv_path = ''
 
 try:
     temp_dir_path = setup_cfg.get(util.PATH_SECT, util.TEMP_OPT)
 except (NoSectionError, NoOptionError):
     print 'Error loading temp dir configuration info'
-    sys.exit(-1)
+    temp_dir_path = ''
+    #sys.exit(-1)
 
 temp_dir_path = os.path.abspath(temp_dir_path)
 #make sure the directory exists
@@ -54,7 +57,7 @@ config_path = os.path.join(here, util.CONFIG_FILE_RELATIVE_PATH)
 
 util.create_main_config_file(config_path, [util.TOOL_SECT,
                                            util.PATH_SECT],
-                             {util.TOOL_SECT: (util.LTL3BA_OPT, ltl3ba_path),
+                             {util.TOOL_SECT: (util.NUXMV_OPT, nuxmv_path),
                               util.PATH_SECT: (util.TEMP_OPT, temp_dir_path)
                              })
 
@@ -63,7 +66,7 @@ with open(os.path.join(here, 'DESCRIPTION.md')) as f:
     long_description = f.read()
 
 setup(
-    name='pyco',
+    name='pycolite',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -74,7 +77,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/ianno/pyco',
+    url='https://github.com/ianno/pycolite',
 
     # Author details
     author='Antonio Iannopollo',
@@ -115,7 +118,7 @@ setup(
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['ply', 'py'],
+    install_requires=['ply', 'py', 'pytest'],
 
     # List additional groups of dependencies here (e.g. development dependencies).
     # You can install these using the following syntax, for example:
