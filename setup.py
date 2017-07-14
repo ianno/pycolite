@@ -35,9 +35,7 @@ nuxmv_path = util.which(nuxmv_path)
 
 if nuxmv_path is None:
     print 'Error, nuxmv path is invalid'
-    #sys.exit(-1)
-else:
-    nuxmv_path = ''
+    sys.exit(-1)
 
 try:
     temp_dir_path = setup_cfg.get(util.PATH_SECT, util.TEMP_OPT)
