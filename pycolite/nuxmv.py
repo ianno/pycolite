@@ -88,7 +88,8 @@ def is_empty_formula(formula, prefix='',
 
 def verify_tautology(formula, prefix='',
                      tool_location=NuxmvPathLoader.get_path(),
-                     delete_file=True):
+                     delete_file=True,
+                     return_trace=False):
     '''
     Verifies if a LTLFormula object represents a tautology
     '''
@@ -116,7 +117,7 @@ def verify_tautology(formula, prefix='',
     with temp_file:
 
 
-        #LOG.debug(MODULE_TEMPLATE % (var_str, formula_str))
+        LOG.debug(MODULE_TEMPLATE % (var_str, formula_str))
 
         temp_file.write(MODULE_TEMPLATE % (var_str, formula_str))
         temp_file.seek(0)
@@ -127,10 +128,15 @@ def verify_tautology(formula, prefix='',
         #LOG.debug(output)
         #LOG.debug(output.endswith(NUXMV_FALSE))
         if output.endswith(NUXMV_TRUE):
-            return True
+            val = True
         else:
             #LOG.debug(output)
-            return False
+            val = False
+
+        if return_trace:
+            return val, output
+        else:
+            return val
 
 class NuxmvContractInterface(object):
     '''
@@ -163,13 +169,9 @@ class NuxmvRefinementStrategy(NuxmvContractInterface):
         '''
         Override of abstract method
         '''
+
         contract_name = self.contract.name_attribute.unique_name
-        #create formulae to be checked
-        assumption_check_formula = self._get_assumptions_check_formula(abstract_contract)
-        guarantee_check_formula = self._get_guarantee_check_formula(abstract_contract)
-
-
-        both_formulas = Conjunction(assumption_check_formula, guarantee_check_formula)
+        both_formulas = self.get_refinement_formula(abstract_contract)
 
         #check both formulas
         output = verify_tautology(both_formulas, \
@@ -179,6 +181,22 @@ class NuxmvRefinementStrategy(NuxmvContractInterface):
 
 
         return output
+
+    def get_refinement_formula(self, abstract_contract):
+        '''
+        returns the formual object to be verified
+        :param abstract_contract:
+        :return:
+        '''
+
+        # create formulae to be checked
+        assumption_check_formula = self._get_assumptions_check_formula(abstract_contract)
+        guarantee_check_formula = self._get_guarantee_check_formula(abstract_contract)
+
+        both_formulas = Conjunction(assumption_check_formula, guarantee_check_formula,
+                                    merge_literals=False)
+
+        return both_formulas
 
     def _get_assumptions_check_formula(self, abstract_contract):
         '''
