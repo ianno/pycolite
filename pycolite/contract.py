@@ -1154,6 +1154,9 @@ class CompositionMapping(object):
             outputs = [port for port in port_set if port.is_output]
 
             if len(outputs) > 1:
+                LOG.critical(name)
+                for p in port_set:
+                    LOG.critical(p.base_name)
                 raise PortConnectionError('cannot connect multiple outputs')
             else:
                 #merge port literals
