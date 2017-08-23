@@ -17,7 +17,7 @@ from pycolite import LOG
 from pycolite.types import Bool, Int
 
 #OPT_NUXMV = '-coi'
-CMD_OPT = '-dcx'
+CMD_OPT = ['-dynamic', '-coi', '-df', '-bmc']
 
 #trace delimiters
 #TR_INIT = 'Trace Type: Counterexample'
@@ -38,6 +38,7 @@ LTLSPEC (
 
 TEMP_FILES_PATH = '/tmp/'
 NUXMV_TRUE = 'is true\n'
+NUXMV_BMC_OK = '-- no counterexample found with bound'
 
 def trace_parser(trace):
     '''
@@ -123,11 +124,12 @@ def verify_tautology(formula, prefix='',
         temp_file.seek(0)
 
         #output = check_output([tool_location, CMD_OPT, temp_file.name])
-        output = check_output([tool_location, temp_file.name],
+        output = check_output([tool_location]+CMD_OPT +[temp_file.name],
                               stderr=STDOUT,)
-        #LOG.debug(output)
+        # LOG.debug(output)
         #LOG.debug(output.endswith(NUXMV_FALSE))
-        if output.endswith(NUXMV_TRUE):
+        lines = output.splitlines()
+        if output.endswith(NUXMV_TRUE) or lines[-1].startswith(NUXMV_BMC_OK):
             val = True
         else:
             #LOG.debug(output)
