@@ -492,6 +492,24 @@ class Contract(object):
         #The dict is inializated as empty
         self.origin_contracts = {}
 
+        self.relevant_ports = self.__infer_relevant_ports()
+
+    def __infer_relevant_ports(self):
+        """
+        list all the ports which are used in the assume or guarantee formula
+        :return:
+        """
+
+        literals = (self.assume_formula.get_literal_items()
+                    | self.guarantee_formula.get_literal_items())
+
+        literal_unames = set([literal.unique_name for _, literal in literals])
+
+        # match literals and ports
+        ports = set([port for port in self.ports_dict.values() if port.unique_name in literal_unames])
+
+
+        return ports
 
     def copy(self):
         '''
