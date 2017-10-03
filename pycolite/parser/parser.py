@@ -21,7 +21,7 @@ class Parser(object):
         self.__build()
 
     def p_error(self, p):
-        LOG.debug('Error')
+        #LOG.debug('Error')
         print p.value
         raise GeneralError(p)
 
@@ -42,12 +42,14 @@ class Parser(object):
         '''expr : expr IMPLICATION expr'''
         p[0] = formula.Implication(p[1], p[3])
 
-    def p_prop_equals(self, p):
+    def p_expr_equals(self, p):
         '''expr : expr EQUALITY expr'''
         p[0] = formula.Equivalence(p[1], p[3])
 
     def p_expr_globally(self, p):
         '''expr : GLOBALLY expr'''
+
+        #LOG.debug(p[2])
         p[0] = formula.Globally(p[2])
 
     def p_expr_eventually(self, p):
@@ -91,10 +93,15 @@ class Parser(object):
     def p_prop_constant(self, p):
         '''prop : CONSTANT'''
         #print p[1]
+        LOG.debug(p[1])
         p[0] = formula.Constant(p[1])
 
     def p_expr_parenthesis(self, p):
         '''expr : LPAREN expr RPAREN'''
+        p[0] = p[2]
+
+    def p_prop_parenthesis(self, p):
+        '''prop : LPAREN prop RPAREN'''
         p[0] = p[2]
 
     def p_prop_ge(self, p):
@@ -103,6 +110,8 @@ class Parser(object):
 
     def p_prop_geq(self, p):
         '''prop : prop GEQ prop'''
+        #LOG.debug(p[1])
+        #LOG.debug(p[3])
         p[0] = formula.Geq(p[1], p[3])
 
     def p_prop_le(self, p):
@@ -119,6 +128,9 @@ class Parser(object):
 
     def p_prop_sub(self, p):
         '''prop : prop SUB prop'''
+        #LOG.debug(p[1])
+        #LOG.debug(p[2])
+        #LOG.debug(p[3])
         p[0] = formula.Subtraction(p[1], p[3])
 
     def p_prop_mul(self, p):

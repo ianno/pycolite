@@ -21,6 +21,14 @@ LTL3BA_OPT = 'ltl3ba'
 TEMP_OPT = 'temp_dir'
 
 NUXMV_OPT = 'nuxmv'
+NUXMV_CMD_SOURCE = """go_msat
+build_simplified_property -n 0
+# msat_check_ltlspec_inc_coi -n 1 #128.53s
+msat_check_ltlspec_sbmc_inc  -n 1 #69.44s
+#check ltlspec simplify -n 1
+quit
+"""
+NUXMV_CMD_FILENAME = 'verify_tautology.cmd'
 
 def create_main_config_file(filepath, section_list, option_dict):
     '''
@@ -70,3 +78,14 @@ def which(program):
     return None
 
 
+def create_nuxmv_cmd_file(sourcepath):
+    '''
+    Create cmd file for nuxmv if it doesn't exists
+    :param sourcepath:
+    :return:
+    '''
+
+    with open(sourcepath, 'w+') as fn:
+        fn.write(NUXMV_CMD_SOURCE)
+
+    return

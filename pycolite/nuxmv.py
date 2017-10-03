@@ -15,9 +15,13 @@ from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
 import os
 from pycolite import LOG
 from pycolite.types import Bool, Int
+from pycolite.util.util import NUXMV_CMD_FILENAME
 
 #OPT_NUXMV = '-coi'
-CMD_OPT = ['-dynamic', '-coi', '-df', '-bmc']
+# CMD_OPT = ['-dynamic', '-coi', '-df', '-bmc']
+CMD_OPT = ['-source']
+
+#CMD file content in util.py
 
 #trace delimiters
 #TR_INIT = 'Trace Type: Counterexample'
@@ -38,7 +42,8 @@ LTLSPEC (
 
 TEMP_FILES_PATH = '/tmp/'
 NUXMV_TRUE = 'is true\n'
-NUXMV_BMC_OK = '-- no counterexample found with bound'
+NUXMV_BMC_OK = '-- Cannot verify the property'
+NUXMV_BMC_OK_ALT = '-- terminating with bound 10.'
 
 def trace_parser(trace):
     '''
@@ -52,6 +57,7 @@ class NuxmvPathLoader(object):
     it is called,
     '''
     nuxmv_path = None
+    source_path = None
 
     @classmethod
     def get_path(cls):
@@ -73,6 +79,18 @@ class NuxmvPathLoader(object):
 
         return cls.nuxmv_path
 
+    @classmethod
+    def get_source_path(cls):
+        '''
+        gets the source cmd file path
+        '''
+        if cls.source_path is None:
+            nuxmvpath = NuxmvPathLoader.get_path()
+            dirpath = os.path.dirname(nuxmvpath)
+            cls.source_path = os.path.join(dirpath, NUXMV_CMD_FILENAME)
+
+        return cls.source_path
+
 def is_empty_formula(formula, prefix='',
                      tool_location=NuxmvPathLoader.get_path(),
                      delete_file=True):
@@ -89,6 +107,7 @@ def is_empty_formula(formula, prefix='',
 
 def verify_tautology(formula, prefix='',
                      tool_location=NuxmvPathLoader.get_path(),
+                     source_location=NuxmvPathLoader.get_source_path(),
                      delete_file=True,
                      return_trace=False):
     '''
@@ -109,7 +128,8 @@ def verify_tautology(formula, prefix='',
         if isinstance(l.l_type, Bool):
             var_list.append('\t%s: boolean;\n' %l.unique_name)
         elif isinstance(l.l_type, Int):
-            var_list.append('\t%s: %d..%d;\n' % (l.unique_name, l.l_type.lower, l.l_type.upper))
+            var_list.append('\t%s: integer;\n' %l.unique_name)
+            # var_list.append('\t%s: %d..%d;\n' % (l.unique_name, l.l_type.lower, l.l_type.upper))
 
     var_list = set(var_list)
     #var_list = set(['\t%s: boolean;\n' %l.unique_name for l in literals])
@@ -118,18 +138,19 @@ def verify_tautology(formula, prefix='',
     with temp_file:
 
 
-        LOG.debug(MODULE_TEMPLATE % (var_str, formula_str))
+        # LOG.critical(MODULE_TEMPLATE % (var_str, formula_str))
 
         temp_file.write(MODULE_TEMPLATE % (var_str, formula_str))
         temp_file.seek(0)
 
         #output = check_output([tool_location, CMD_OPT, temp_file.name])
-        output = check_output([tool_location]+CMD_OPT +[temp_file.name],
+        output = check_output([tool_location]+CMD_OPT +[source_location] +[temp_file.name],
                               stderr=STDOUT,)
-        # LOG.debug(output)
+        # LOG.critical(output)
         #LOG.debug(output.endswith(NUXMV_FALSE))
         lines = output.splitlines()
-        if output.endswith(NUXMV_TRUE) or lines[-1].startswith(NUXMV_BMC_OK):
+        if (output.endswith(NUXMV_TRUE) or lines[-1].startswith(NUXMV_BMC_OK)
+            or lines[-1].startswith(NUXMV_BMC_OK_ALT)):
             val = True
         else:
             #LOG.debug(output)

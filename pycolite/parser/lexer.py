@@ -94,7 +94,7 @@ class Lexer(object):
         self.t_ADD = re.escape(symbol_set_cls.symbols['ADD'])
         self.t_SUB = re.escape(symbol_set_cls.symbols['SUB'])
         self.t_MUL = re.escape(symbol_set_cls.symbols['MUL'])
-        self.t_SUB = re.escape(symbol_set_cls.symbols['DIV'])
+        self.t_DIV = re.escape(symbol_set_cls.symbols['DIV'])
         #self.t_LITERAL = r'[a-z_][a-zA-Z0-9_]*'
 
         self.__build()

@@ -6,7 +6,9 @@ Created on Aug 19, 2014
 
 import logging
 import sys
+import os
 import pdb
+from pycolite.util.util import create_nuxmv_cmd_file
 
 sys.setrecursionlimit(10000)
 
@@ -24,5 +26,11 @@ ch.setFormatter(formatter)
 LOG.addHandler(ch)
 
 LOG.debug('PYCOLITE INIT')
+
+#check tautology file is present
+
+from pycolite.nuxmv import NuxmvPathLoader
+sourcepath = NuxmvPathLoader.get_source_path()
+create_nuxmv_cmd_file(sourcepath)
 
 #pdb.set_trace()

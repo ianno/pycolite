@@ -364,10 +364,11 @@ class Contract(object):
             #check for types
             temp_list = []
             for elem in input_ports:
-                if isinstance(elem, (list, tuple)) and len(elem) >= 3:
+                if isinstance(elem, (list, tuple)) and len(elem) >= 4:
+                    # LOG.critical(elem)
                     name = elem[0]
-                    lower = elem[1]
-                    upper = elem[2]
+                    lower = elem[2]
+                    upper = elem[3]
 
                     self.type_dir[name] = Int(lower, upper)
 
@@ -402,10 +403,10 @@ class Contract(object):
             #check for types
             temp_list = []
             for elem in output_ports:
-                if isinstance(elem, (list, tuple)) and len(elem) >= 3:
+                if isinstance(elem, (list, tuple)) and len(elem) >= 4:
                     name = elem[0]
-                    lower = elem[1]
-                    upper = elem[2]
+                    lower = elem[2]
+                    upper = elem[3]
 
                     self.type_dir[name] = Int(lower, upper)
 
