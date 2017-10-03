@@ -14,7 +14,7 @@ from ConfigParser import SafeConfigParser
 from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
 import os
 from pycolite import LOG
-from pycolite.types import Bool, Int
+from pycolite.types import Bool, Int, Float
 from pycolite.util.util import NUXMV_CMD_FILENAME
 
 #OPT_NUXMV = '-coi'
@@ -125,10 +125,12 @@ def verify_tautology(formula, prefix='',
     #LOG.debug(literals)
     var_list = []
     for l in literals:
-        if isinstance(l.l_type, Bool):
-            var_list.append('\t%s: boolean;\n' %l.unique_name)
+        if isinstance(l.l_type, Float):
+            var_list.append('\t%s: real;\n' %l.unique_name)
         elif isinstance(l.l_type, Int):
             var_list.append('\t%s: integer;\n' %l.unique_name)
+        elif isinstance(l.l_type, Bool):
+            var_list.append('\t%s: boolean;\n' %l.unique_name)
             # var_list.append('\t%s: %d..%d;\n' % (l.unique_name, l.l_type.lower, l.l_type.upper))
 
     var_list = set(var_list)
