@@ -84,18 +84,6 @@ class Parser(object):
         '''prop : FALSE'''
         p[0] = formula.FalseFormula()
 
-    def p_prop_literal(self, p):
-        '''prop : LITERAL'''
-        #add more here on literals
-        #LOG.debug(p[1])
-        p[0] = formula.Literal(p[1], context=self.context)
-
-    def p_prop_constant(self, p):
-        '''prop : CONSTANT'''
-        #print p[1]
-        LOG.debug(p[1])
-        p[0] = formula.Constant(p[1])
-
     def p_expr_parenthesis(self, p):
         '''expr : LPAREN expr RPAREN'''
         p[0] = p[2]
@@ -128,9 +116,8 @@ class Parser(object):
 
     def p_prop_sub(self, p):
         '''prop : prop SUB prop'''
-        #LOG.debug(p[1])
-        #LOG.debug(p[2])
-        #LOG.debug(p[3])
+        # LOG.debug(len(p))
+        # LOG.debug(p[0])
         p[0] = formula.Subtraction(p[1], p[3])
 
     def p_prop_mul(self, p):
@@ -140,6 +127,44 @@ class Parser(object):
     def p_prop_div(self, p):
         '''prop : prop DIV prop'''
         p[0] = formula.Division(p[1], p[3])
+
+    def p_prop_unary(self, p):
+        '''prop : unary'''
+        p[0] = p[1]
+
+    def p_unary_pos(self, p):
+        '''unary : CONSTANT'''
+        #print p[1]
+        # LOG.debug(p[1])
+        try:
+            val = int(p[1])
+        except ValueError:
+            val = float(p[1])
+        p[0] = formula.Constant(val)
+
+    def p_unary_neg(self, p):
+        '''unary : SUB CONSTANT'''
+        #print p[1]
+        # LOG.debug(p[2].value)
+        try:
+            val = int(p[2])
+        except ValueError:
+            val = float(p[2])
+        p[0] = formula.Constant(0-val)
+
+    def p_unary_literal(self, p):
+        '''unary : LITERAL'''
+        #add more here on literals
+        #LOG.debug(p[1])
+        p[0] = formula.Literal(p[1], context=self.context)
+
+    def p_unary_neg_literal(self, p):
+        '''unary : SUB LITERAL'''
+        #add more here on literals
+        #LOG.debug(p[1])
+        zero = formula.Constant(0)
+        lit = formula.Literal(p[2], context=self.context)
+        p[0] = formula.Subtraction(zero, lit)
 
 
 # Build the parser

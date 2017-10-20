@@ -139,7 +139,12 @@ class LTLFormula(Observer):
 
         return self.literals.viewitems()
 
-
+    def __repr__(self):
+        '''
+        pretty print
+        :return:
+        '''
+        return self.generate()
 
 
 
