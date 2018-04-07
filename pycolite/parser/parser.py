@@ -62,7 +62,7 @@ class Parser(object):
 
     def p_expr_until(self, p):
         '''expr : expr UNTIL expr'''
-        raise NotImplementedError
+        p[0] = formula.Until(p[1], p[3])
 
     def p_expr_release(self, p):
         '''expr : expr RELEASE expr'''

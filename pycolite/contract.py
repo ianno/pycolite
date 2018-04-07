@@ -366,7 +366,7 @@ class Contract(object):
 
         return ports
 
-    def copy(self):
+    def copy(self, new_basename=None):
         '''
         create a copy, with new disconnected ports, of the current contract
         Preserves feedback loops
@@ -375,7 +375,9 @@ class Contract(object):
         #new_contract = deepcopy(self)
         #new_contract.assume_formula.reinitialize()
         #new_contract.guarantee_formula.reinitialize()
-        new_name = self.base_name
+        if new_basename is None:
+            new_basename = self.base_name
+        new_name = new_basename
         new_guarantees = self.guarantee_formula.generate()
         new_assumptions = self.assume_formula.generate()
 

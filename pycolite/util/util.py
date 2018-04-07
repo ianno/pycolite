@@ -21,13 +21,16 @@ LTL3BA_OPT = 'ltl3ba'
 TEMP_OPT = 'temp_dir'
 
 NUXMV_OPT = 'nuxmv'
-NUXMV_CMD_SOURCE = """go_msat
+NUXMV_BOUND = 5
+NUXMV_CMD_SOURCE = """# set cone_of_influence
+go_msat
 build_simplified_property -n 0
-# msat_check_ltlspec_inc_coi -n 1 #128.53s
-msat_check_ltlspec_sbmc_inc  -n 1 #69.44s
-#check ltlspec simplify -n 1
+# msat_check_ltlspec_inc_coi -n 1 -k 10 -I #128.53s
+# msat_check_ltlspec_sbmc_inc  -n 1 -k %d #69.44s
+msat_check_ltlspec_bmc  -n 1 -k 5
+# check_ltlspec_inc_coi_bmc -n 1 -k 10
 quit
-"""
+""" % NUXMV_BOUND
 NUXMV_CMD_FILENAME = 'verify_tautology.cmd'
 
 def create_main_config_file(filepath, section_list, option_dict):

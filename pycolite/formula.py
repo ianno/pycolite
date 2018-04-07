@@ -577,6 +577,11 @@ class Next(UnaryFormula):
     Symbol = 'NEXT'
 
 
+class Until(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'UNTIL'
 
 class Negation(UnaryFormula):
     '''

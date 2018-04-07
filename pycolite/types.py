@@ -8,6 +8,7 @@ from abc import ABCMeta
 
 BOOL_TYPE = 'BOOL'
 INT_TYPE = 'INT'
+FROZEN_INT_TYPE = 'FROZEN_INT'
 FLOAT_TYPE = 'FLOAT'
 
 
@@ -61,6 +62,16 @@ class Int(Bool):
         '''
         return INT_TYPE
 
+class FrozenInt(Int):
+    '''
+    Define integer
+    '''
+
+    def __repr__(self):
+        '''
+        pretty print
+        '''
+        return FROZEN_INT_TYPE
 
 class Float(Int):
     '''

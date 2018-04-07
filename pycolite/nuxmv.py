@@ -14,8 +14,8 @@ from ConfigParser import SafeConfigParser
 from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
 import os
 from pycolite import LOG
-from pycolite.types import Bool, Int, Float
-from pycolite.util.util import NUXMV_CMD_FILENAME
+from pycolite.types import Bool, Int, FrozenInt, Float
+from pycolite.util.util import NUXMV_CMD_FILENAME, NUXMV_BOUND
 
 #OPT_NUXMV = '-coi'
 # CMD_OPT = ['-dynamic', '-coi', '-df', '-bmc']
@@ -30,7 +30,6 @@ CMD_OPT = ['-source']
 
 MODULE_TEMPLATE = '''
 MODULE main()
-    VAR
     %s
 
 LTLSPEC (
@@ -43,7 +42,14 @@ LTLSPEC (
 TEMP_FILES_PATH = '/tmp/'
 NUXMV_TRUE = 'is true\n'
 NUXMV_BMC_OK = '-- Cannot verify the property'
-NUXMV_BMC_OK_ALT = '-- terminating with bound 10.'
+NUXMV_BMC_OK_ALT = '-- terminating with bound %d.'%NUXMV_BOUND
+NUXMV_BMC_OK_ALT2 = '-- no counterexample found with bound %d'%NUXMV_BOUND
+
+SIMPLIFY_TEMPLATE_START = '''**** PROPERTY LIST [ Type, Status, Counter-example Number, Name ] ****
+--------------------------  PROPERTY LIST  -------------------------
+001 :'''
+SIMPLIFY_TEMPLATE_END = '''
+  [LTL            Unchecked      N/A    N/A]'''
 
 def trace_parser(trace):
     '''
@@ -114,11 +120,11 @@ def verify_tautology(formula, prefix='',
     Verifies if a LTLFormula object represents a tautology
     '''
 
-    temp_file = NamedTemporaryFile( \
+    temp_file = NamedTemporaryFile(
             prefix='%s' % prefix,
             dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file)
 
-    formula_str = formula.generate(symbol_set=NusmvSymbolSet, \
+    formula_str = formula.generate(symbol_set=NusmvSymbolSet,
                 ignore_precedence=True)
 
     literals = [l for (_, l) in formula.get_literal_items()]
@@ -126,11 +132,13 @@ def verify_tautology(formula, prefix='',
     var_list = []
     for l in literals:
         if isinstance(l.l_type, Float):
-            var_list.append('\t%s: real;\n' %l.unique_name)
+            var_list.append('\tVAR %s: real;\n' %l.unique_name)
+        elif isinstance(l.l_type, FrozenInt):
+            var_list.append('\tFROZENVAR %s: integer;\n' %l.unique_name)
         elif isinstance(l.l_type, Int):
-            var_list.append('\t%s: integer;\n' %l.unique_name)
+            var_list.append('\tVAR %s: integer;\n' %l.unique_name)
         elif isinstance(l.l_type, Bool):
-            var_list.append('\t%s: boolean;\n' %l.unique_name)
+            var_list.append('\tVAR %s: boolean;\n' %l.unique_name)
             # var_list.append('\t%s: %d..%d;\n' % (l.unique_name, l.l_type.lower, l.l_type.upper))
 
     var_list = set(var_list)
@@ -152,7 +160,7 @@ def verify_tautology(formula, prefix='',
         #LOG.debug(output.endswith(NUXMV_FALSE))
         lines = output.splitlines()
         if (output.endswith(NUXMV_TRUE) or lines[-1].startswith(NUXMV_BMC_OK)
-            or lines[-1].startswith(NUXMV_BMC_OK_ALT)):
+            or lines[-1].startswith(NUXMV_BMC_OK_ALT) or lines[-1].startswith(NUXMV_BMC_OK_ALT2)):
             val = True
         else:
             #LOG.debug(output)
@@ -162,6 +170,66 @@ def verify_tautology(formula, prefix='',
             return val, output
         else:
             return val
+
+
+def simplify(formula, prefix='',
+                     tool_location=NuxmvPathLoader.get_path(),
+                     source_location=NuxmvPathLoader.get_source_path(),
+                     delete_file=True,
+                     return_trace=False):
+    '''
+    returns a simplified LTL formula
+    '''
+
+    return
+    # temp_file = NamedTemporaryFile( \
+    #         prefix='%s' % prefix,
+    #         dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file)
+    #
+    # formula_str = formula.generate(symbol_set=NusmvSymbolSet, \
+    #             ignore_precedence=True)
+    #
+    # literals = [l for (_, l) in formula.get_literal_items()]
+    # #LOG.debug(literals)
+    # var_list = []
+    # for l in literals:
+    #     if isinstance(l.l_type, Float):
+    #         var_list.append('\t%s: real;\n' %l.unique_name)
+    #     elif isinstance(l.l_type, Int):
+    #         var_list.append('\t%s: integer;\n' %l.unique_name)
+    #     elif isinstance(l.l_type, Bool):
+    #         var_list.append('\t%s: boolean;\n' %l.unique_name)
+    #         # var_list.append('\t%s: %d..%d;\n' % (l.unique_name, l.l_type.lower, l.l_type.upper))
+    #
+    # var_list = set(var_list)
+    # #var_list = set(['\t%s: boolean;\n' %l.unique_name for l in literals])
+    # var_str = ''.join(var_list)
+    #
+    # with temp_file:
+    #
+    #
+    #     # LOG.critical(MODULE_TEMPLATE % (var_str, formula_str))
+    #
+    #     temp_file.write(MODULE_TEMPLATE % (var_str, formula_str))
+    #     temp_file.seek(0)
+    #
+    #     #output = check_output([tool_location, CMD_OPT, temp_file.name])
+    #     output = check_output([tool_location]+CMD_OPT +[source_location] +[temp_file.name],
+    #                           stderr=STDOUT,)
+    #     # LOG.critical(output)
+    #     #LOG.debug(output.endswith(NUXMV_FALSE))
+    #     lines = output.splitlines()
+    #     if (output.endswith(NUXMV_TRUE) or lines[-1].startswith(NUXMV_BMC_OK)
+    #         or lines[-1].startswith(NUXMV_BMC_OK_ALT) or lines[-1].startswith(NUXMV_BMC_OK_ALT2)):
+    #         val = True
+    #     else:
+    #         #LOG.debug(output)
+    #         val = False
+    #
+    #     if return_trace:
+    #         return val, output
+    #     else:
+    #         return val
 
 class NuxmvContractInterface(object):
     '''
