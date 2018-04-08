@@ -15,7 +15,8 @@ from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
 import os
 from pycolite import LOG
 from pycolite.types import Bool, Int, FrozenInt, Float
-from pycolite.util.util import NUXMV_CMD_FILENAME, NUXMV_BOUND
+from pycolite.util.util import NUXMV_CMD_FILENAME, NUXMV_BOUND, LTL2SMV
+from pycolite.attribute import Attribute
 
 #OPT_NUXMV = '-coi'
 # CMD_OPT = ['-dynamic', '-coi', '-df', '-bmc']
@@ -51,6 +52,13 @@ SIMPLIFY_TEMPLATE_START = '''**** PROPERTY LIST [ Type, Status, Counter-example 
 SIMPLIFY_TEMPLATE_END = '''
   [LTL            Unchecked      N/A    N/A]'''
 
+LTL2SMV_TOP = '''MODULE ltl_spec_%d
+VAR
+'''
+LTL2SMV_DEFINE = 'DEFINE'
+LTL2SMV_INSERT_AT = 2
+
+
 def trace_parser(trace):
     '''
     Parses the output of nuxmv and give a list of the involved variables/contracts
@@ -64,6 +72,7 @@ class NuxmvPathLoader(object):
     '''
     nuxmv_path = None
     source_path = None
+    ltl2smv_path = None
 
     @classmethod
     def get_path(cls):
@@ -97,6 +106,17 @@ class NuxmvPathLoader(object):
 
         return cls.source_path
 
+    @classmethod
+    def get_ltl2smv_path(cls):
+        '''
+        gets the source cmd file path
+        '''
+        if cls.ltl2smv_path is None:
+            nuxmvpath = NuxmvPathLoader.get_path()
+            dirpath = os.path.dirname(nuxmvpath)
+            cls.ltl2smv_path = os.path.join(dirpath, LTL2SMV)
+        return cls.ltl2smv_path
+
 def is_empty_formula(formula, prefix='',
                      tool_location=NuxmvPathLoader.get_path(),
                      delete_file=True):
@@ -110,6 +130,33 @@ def is_empty_formula(formula, prefix='',
 
     return verify_tautology(n_formula, prefix=prefix, \
             tool_location=tool_location, delete_file=delete_file)
+
+
+def _process_var_decl(vars):
+    '''
+    return nuxmv premble for variables in vars
+    :param vars:
+    :return:
+    '''
+
+    # LOG.debug(literals)
+    var_list = []
+    for l in vars:
+        if isinstance(l.l_type, Float):
+            var_list.append('\tVAR %s: real;\n' % l.unique_name)
+        elif isinstance(l.l_type, FrozenInt):
+            var_list.append('\tFROZENVAR %s: integer;\n' % l.unique_name)
+        elif isinstance(l.l_type, Int):
+            var_list.append('\tVAR %s: integer;\n' % l.unique_name)
+        elif isinstance(l.l_type, Bool):
+            var_list.append('\tVAR %s: boolean;\n' % l.unique_name)
+            # var_list.append('\t%s: %d..%d;\n' % (l.unique_name, l.l_type.lower, l.l_type.upper))
+
+    var_list = set(var_list)
+    # var_list = set(['\t%s: boolean;\n' %l.unique_name for l in literals])
+    var_str = ''.join(var_list)
+
+    return var_str
 
 def verify_tautology(formula, prefix='',
                      tool_location=NuxmvPathLoader.get_path(),
@@ -128,22 +175,8 @@ def verify_tautology(formula, prefix='',
                 ignore_precedence=True)
 
     literals = [l for (_, l) in formula.get_literal_items()]
-    #LOG.debug(literals)
-    var_list = []
-    for l in literals:
-        if isinstance(l.l_type, Float):
-            var_list.append('\tVAR %s: real;\n' %l.unique_name)
-        elif isinstance(l.l_type, FrozenInt):
-            var_list.append('\tFROZENVAR %s: integer;\n' %l.unique_name)
-        elif isinstance(l.l_type, Int):
-            var_list.append('\tVAR %s: integer;\n' %l.unique_name)
-        elif isinstance(l.l_type, Bool):
-            var_list.append('\tVAR %s: boolean;\n' %l.unique_name)
-            # var_list.append('\t%s: %d..%d;\n' % (l.unique_name, l.l_type.lower, l.l_type.upper))
 
-    var_list = set(var_list)
-    #var_list = set(['\t%s: boolean;\n' %l.unique_name for l in literals])
-    var_str = ''.join(var_list)
+    var_str = _process_var_decl(literals)
 
     with temp_file:
 
@@ -172,6 +205,54 @@ def verify_tautology(formula, prefix='',
             return val
 
 
+def ltl2smv(formula, prefix=None, include_vars=None, parameters=None, delete_file=True,
+            ltl2smv_location=NuxmvPathLoader.get_ltl2smv_path()):
+    '''
+    returns a smv model from a ltl formula
+    :param formula:
+    :param prefix:
+    :return:
+    '''
+    if prefix is None:
+        prefix = Attribute('').unique_name
+    if include_vars is None:
+        include_vars = []
+    if parameters is None:
+        parameters = []
+
+    temp_file = NamedTemporaryFile(
+        dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file)
+
+    formula_str = formula.generate(symbol_set=NusmvSymbolSet,
+                                   ignore_precedence=True)
+
+    var_str = _process_var_decl(include_vars).strip()
+
+    with temp_file:
+        temp_file.write(formula_str)
+        temp_file.seek(0)
+
+        # output = check_output([tool_location, CMD_OPT, temp_file.name])
+        output = check_output([ltl2smv_location] + [prefix] + [temp_file.name],
+                              stderr=STDOUT, )
+
+        #now process string to add var declaration
+        out_lines = output.split('\n')
+        #remvove 'VAR' line, add additional variables, and add 'var' it before each declaration
+        pre_lines = out_lines[:LTL2SMV_INSERT_AT-1] + [x.strip() for x in var_str.split('\n')]
+        i = 0
+        while out_lines[LTL2SMV_INSERT_AT+i] != LTL2SMV_DEFINE:
+            out_lines[LTL2SMV_INSERT_AT + i] = 'VAR ' + out_lines[LTL2SMV_INSERT_AT+i].strip()
+            i += 1
+
+        out_lines =  pre_lines + out_lines[LTL2SMV_INSERT_AT:]
+        #and add parameters to first line
+        out_lines[0] = out_lines[0] + '(%s)' % (', '.join([x.unique_name for x in parameters]))
+
+        out_txt = '\n'.join(out_lines)
+
+        return out_txt
+
 def simplify(formula, prefix='',
                      tool_location=NuxmvPathLoader.get_path(),
                      source_location=NuxmvPathLoader.get_source_path(),
@@ -181,7 +262,7 @@ def simplify(formula, prefix='',
     returns a simplified LTL formula
     '''
 
-    return
+    return NotImplementedError
     # temp_file = NamedTemporaryFile( \
     #         prefix='%s' % prefix,
     #         dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file)

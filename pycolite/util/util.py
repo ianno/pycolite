@@ -33,6 +33,8 @@ quit
 """ % NUXMV_BOUND
 NUXMV_CMD_FILENAME = 'verify_tautology.cmd'
 
+LTL2SMV = 'ltl2smv'
+
 def create_main_config_file(filepath, section_list, option_dict):
     '''
     Create main config file given the current module path
