@@ -15,8 +15,10 @@ from pycolite import LOG
 from pycolite.types import Bool
 
 PRECEDENCE_TUPLE = (
-    ('left', 'IMPLICATION'),
-    ('left', 'AND', 'OR'),
+    ('right', 'IMPLICATION'),
+    ('left', 'DOUBLE_IMPLICATION'),
+    ('left', 'OR'),
+    ('left', 'AND'),
     ('left', 'UNTIL', 'RELEASE', 'WEAK_UNTIL'),
     ('right', 'GLOBALLY', 'EVENTUALLY'),
     ('left', 'GE', 'GEQ', 'LE', 'LEQ', 'EQUALITY'),
@@ -61,7 +63,7 @@ class LTLFormula(Observer):
         '''
         self.literals = {}
 
-    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False, prefix=''):
         '''
         doc
         '''
@@ -173,7 +175,7 @@ class Literal(Attribute, LTLFormula):
         self.attach(self)
         self.literals[base_name] = self
 
-    def generate(self, symbol_set=None, with_base_names=False, ignore_precendence=False):
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precendence=False, prefix=''):
         '''
         doc
         '''
@@ -181,9 +183,9 @@ class Literal(Attribute, LTLFormula):
             symbol_set = BaseSymbolSet
 
         if with_base_names:
-            return self.literals.values()[0].base_name
+            return prefix + self.literals.values()[0].base_name
         else:
-            return self.literals.values()[0].unique_name
+            return prefix + self.literals.values()[0].unique_name
 
     def update(self, updated_subject):
         '''
@@ -233,7 +235,7 @@ class Constant(LTLFormula):
         self.value = value
 
 
-    def generate(self, symbol_set=None, with_base_names=False, ignore_precendence=False):
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precendence=False, prefix=''):
         '''
         doc
         '''
@@ -429,12 +431,12 @@ class BinaryFormula(LTLFormula):
 
         return '%s %s %s' % (left_string, symbol_set.symbols[self.Symbol], right_string)
 
-    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False, prefix=''):
         '''
         generate full formula string
         '''
-        left_string = self.left_formula.generate(symbol_set, with_base_names, ignore_precedence)
-        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence)
+        left_string = self.left_formula.generate(symbol_set, with_base_names, ignore_precedence, prefix)
+        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence, prefix)
 
         return self.__generate_binary(left_string, right_string, symbol_set, with_base_names, ignore_precedence)
 
@@ -512,11 +514,11 @@ class UnaryFormula(LTLFormula):
 
         return '%s %s' % (symbol_set.symbols[self.Symbol], right_string)
 
-    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False):
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False, prefix=''):
         '''
         generate full formula string
         '''
-        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence)
+        right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence, prefix)
 
         return self.__generate_unary(right_string, symbol_set, with_base_names, ignore_precedence)
 
@@ -542,6 +544,12 @@ class Implication(BinaryFormula):
     doc
     '''
     Symbol = 'IMPLICATION'
+
+class DoubleImplication(BinaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'DOUBLE_IMPLICATION'
 
 
 

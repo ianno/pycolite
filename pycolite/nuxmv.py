@@ -14,7 +14,7 @@ from ConfigParser import SafeConfigParser
 from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
 import os
 from pycolite import LOG
-from pycolite.types import Bool, Int, FrozenInt, Float
+from pycolite.types import Bool, Int, FrozenInt, Float, FrozenBool
 from pycolite.util.util import NUXMV_CMD_FILENAME, NUXMV_BOUND, LTL2SMV
 from pycolite.attribute import Attribute
 
@@ -55,6 +55,7 @@ SIMPLIFY_TEMPLATE_END = '''
 LTL2SMV_TOP = '''MODULE ltl_spec_%d
 VAR
 '''
+LTL2SMV_VARIABLES = 'VAR'
 LTL2SMV_DEFINE = 'DEFINE'
 LTL2SMV_INSERT_AT = 2
 
@@ -146,6 +147,8 @@ def _process_var_decl(vars):
             var_list.append('\tVAR %s: real;\n' % l.unique_name)
         elif isinstance(l.l_type, FrozenInt):
             var_list.append('\tFROZENVAR %s: integer;\n' % l.unique_name)
+        elif isinstance(l.l_type, FrozenBool):
+            var_list.append('\tFROZENVAR %s: boolean;\n' % l.unique_name)
         elif isinstance(l.l_type, Int):
             var_list.append('\tVAR %s: integer;\n' % l.unique_name)
         elif isinstance(l.l_type, Bool):
@@ -158,6 +161,42 @@ def _process_var_decl(vars):
 
     return var_str
 
+def verify_tautology_smv(smv_txt, prefix='',
+                     tool_location=NuxmvPathLoader.get_path(),
+                     source_location=NuxmvPathLoader.get_source_path(),
+                     delete_file=True,
+                     return_trace=False):
+
+    temp_file = NamedTemporaryFile(
+        prefix='%s' % prefix,
+        dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file)
+
+
+    with temp_file:
+
+        # LOG.critical(MODULE_TEMPLATE % (var_str, formula_str))
+
+        temp_file.write(smv_txt)
+        temp_file.seek(0)
+
+        # output = check_output([tool_location, CMD_OPT, temp_file.name])
+        output = check_output([tool_location] + CMD_OPT + [source_location] + [temp_file.name],
+                              stderr=STDOUT, )
+        # LOG.critical(output)
+        # LOG.debug(output.endswith(NUXMV_FALSE))
+        lines = output.splitlines()
+        if (output.endswith(NUXMV_TRUE) or lines[-1].startswith(NUXMV_BMC_OK)
+                or lines[-1].startswith(NUXMV_BMC_OK_ALT) or lines[-1].startswith(NUXMV_BMC_OK_ALT2)):
+            val = True
+        else:
+            # LOG.debug(output)
+            val = False
+
+        if return_trace:
+            return val, output
+        else:
+            return val
+
 def verify_tautology(formula, prefix='',
                      tool_location=NuxmvPathLoader.get_path(),
                      source_location=NuxmvPathLoader.get_source_path(),
@@ -167,9 +206,7 @@ def verify_tautology(formula, prefix='',
     Verifies if a LTLFormula object represents a tautology
     '''
 
-    temp_file = NamedTemporaryFile(
-            prefix='%s' % prefix,
-            dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file)
+
 
     formula_str = formula.generate(symbol_set=NusmvSymbolSet,
                 ignore_precedence=True)
@@ -178,31 +215,13 @@ def verify_tautology(formula, prefix='',
 
     var_str = _process_var_decl(literals)
 
-    with temp_file:
+    smv_txt = MODULE_TEMPLATE % (var_str, formula_str)
 
-
-        # LOG.critical(MODULE_TEMPLATE % (var_str, formula_str))
-
-        temp_file.write(MODULE_TEMPLATE % (var_str, formula_str))
-        temp_file.seek(0)
-
-        #output = check_output([tool_location, CMD_OPT, temp_file.name])
-        output = check_output([tool_location]+CMD_OPT +[source_location] +[temp_file.name],
-                              stderr=STDOUT,)
-        # LOG.critical(output)
-        #LOG.debug(output.endswith(NUXMV_FALSE))
-        lines = output.splitlines()
-        if (output.endswith(NUXMV_TRUE) or lines[-1].startswith(NUXMV_BMC_OK)
-            or lines[-1].startswith(NUXMV_BMC_OK_ALT) or lines[-1].startswith(NUXMV_BMC_OK_ALT2)):
-            val = True
-        else:
-            #LOG.debug(output)
-            val = False
-
-        if return_trace:
-            return val, output
-        else:
-            return val
+    return verify_tautology_smv(smv_txt, prefix=prefix,
+                     tool_location=tool_location,
+                     source_location=source_location,
+                     delete_file=delete_file,
+                     return_trace=return_trace)
 
 
 def ltl2smv(formula, prefix=None, include_vars=None, parameters=None, delete_file=True,
@@ -214,7 +233,7 @@ def ltl2smv(formula, prefix=None, include_vars=None, parameters=None, delete_fil
     :return:
     '''
     if prefix is None:
-        prefix = Attribute('').unique_name
+        prefix = '0'
     if include_vars is None:
         include_vars = []
     if parameters is None:
@@ -240,17 +259,21 @@ def ltl2smv(formula, prefix=None, include_vars=None, parameters=None, delete_fil
         out_lines = output.split('\n')
         #remvove 'VAR' line, add additional variables, and add 'var' it before each declaration
         pre_lines = out_lines[:LTL2SMV_INSERT_AT-1] + [x.strip() for x in var_str.split('\n')]
-        i = 0
-        while out_lines[LTL2SMV_INSERT_AT+i] != LTL2SMV_DEFINE:
-            out_lines[LTL2SMV_INSERT_AT + i] = 'VAR ' + out_lines[LTL2SMV_INSERT_AT+i].strip()
-            i += 1
+
+        if out_lines[LTL2SMV_INSERT_AT] == LTL2SMV_VARIABLES:
+            i = 0
+            while out_lines[LTL2SMV_INSERT_AT+i] != LTL2SMV_DEFINE:
+                out_lines[LTL2SMV_INSERT_AT + i] = 'VAR ' + out_lines[LTL2SMV_INSERT_AT+i].strip()
+                i += 1
+        else:
+            pre_lines.append(out_lines[LTL2SMV_INSERT_AT-1])
 
         out_lines =  pre_lines + out_lines[LTL2SMV_INSERT_AT:]
         #and add parameters to first line
         out_lines[0] = out_lines[0] + '(%s)' % (', '.join([x.unique_name for x in parameters]))
 
         out_txt = '\n'.join(out_lines)
-
+        # LOG.critical(out_txt)
         return out_txt
 
 def simplify(formula, prefix='',
@@ -421,7 +444,10 @@ class NuxmvCompatibilityStrategy(NuxmvContractInterface):
 
         contract_name = self.contract.name_attribute.unique_name
 
-        return not is_empty_formula(self.contract.assume_formula, \
+        f = Conjunction(self.contract.assume_formula, self.contract.guarantee_formula)
+        #f = Negation(f)
+
+        return not is_empty_formula(f, \
                 prefix='%s_compatibility_nuxmv_' % contract_name, \
                 tool_location=self.tool_location, \
                 delete_file=self.delete_files)

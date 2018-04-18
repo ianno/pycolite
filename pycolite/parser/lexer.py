@@ -17,6 +17,7 @@ class BaseSymbolSet(object):
         'RELEASE' : r'R',
         'WEAK_UNTIL' : r'W',
         'IMPLICATION' : r'->',
+        'DOUBLE_IMPLICATION' : r'<->',
         'EQUALITY' : r'=',
         'NOT' : r'!',
         'TRUE' : r'true',
@@ -37,7 +38,7 @@ class Lexer(object):
 
 
     tokens = ['LITERAL', 'CONSTANT', 'AND', 'OR',
-        'NOT', 'IMPLICATION', 'EQUALITY',
+        'NOT', 'IMPLICATION', 'DOUBLE_IMPLICATION', 'EQUALITY',
         'GLOBALLY', 'EVENTUALLY', 'NEXT', 'UNTIL', 'RELEASE',
         'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE',
         'GE', 'GEQ', 'LE', 'LEQ', 'ADD', 'SUB', 'MUL', 'DIV']
@@ -76,6 +77,7 @@ class Lexer(object):
         self.t_OR =  re.escape(symbol_set_cls.symbols['OR'])
         self.t_NOT = symbol_set_cls.symbols['NOT']
         self.t_IMPLICATION = symbol_set_cls.symbols['IMPLICATION']
+        self.t_DOUBLE_IMPLICATION = symbol_set_cls.symbols['DOUBLE_IMPLICATION']
         self.t_EQUALITY = re.escape(symbol_set_cls.symbols['EQUALITY'])
         self.t_GLOBALLY= symbol_set_cls.symbols['GLOBALLY']
         self.t_EVENTUALLY= symbol_set_cls.symbols['EVENTUALLY']

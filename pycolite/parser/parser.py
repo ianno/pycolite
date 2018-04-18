@@ -42,6 +42,10 @@ class Parser(object):
         '''expr : expr IMPLICATION expr'''
         p[0] = formula.Implication(p[1], p[3])
 
+    def p_expr_iff(self, p):
+        '''expr : expr DOUBLE_IMPLICATION expr'''
+        p[0] = formula.DoubleImplication(p[1], p[3])
+
     def p_expr_equals(self, p):
         '''expr : expr EQUALITY expr'''
         p[0] = formula.Equivalence(p[1], p[3])

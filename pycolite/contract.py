@@ -983,12 +983,18 @@ class CompositionMapping(object):
         conflict_set = self.find_conflicts()
 
         for port_set in conflict_set:
-            if port_set > set(reverse_map.viewkeys()):
-                #this means a conflict is not explicitely solved
-                LOG.debug(['%s - %s' %(port.contract.base_name, port.base_name)
-                           for port in (port_set - reverse_map.viewkeys())])
-                LOG.debug(reverse_map)
-                raise PortMappingError()
+            # if port_set > set(reverse_map.viewkeys()):
+            #     #this means a conflict is not explicitely solved
+            #     LOG.debug(['%s - %s' %(port.contract.base_name, port.base_name)
+            #                for port in (port_set - reverse_map.viewkeys())])
+            #     LOG.debug(reverse_map)
+            #     raise PortMappingError()
+            for port in port_set - set(reverse_map.viewkeys()):
+                name = '%s-%s' %(port.contract.unique_name, port.base_name)
+                if name not in self.mapping:
+                    self.mapping[name] = set()
+
+                self.mapping[name].add(port)
 
         #connect and check port consistency
         #LOG.debug(self.mapping)

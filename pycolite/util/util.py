@@ -21,13 +21,14 @@ LTL3BA_OPT = 'ltl3ba'
 TEMP_OPT = 'temp_dir'
 
 NUXMV_OPT = 'nuxmv'
-NUXMV_BOUND = 5
-NUXMV_CMD_SOURCE = """# set cone_of_influence
+NUXMV_BOUND = 10
+NUXMV_CMD_SOURCE = """set on_failure_script_quits 
+# set cone_of_influence
 go_msat
-build_simplified_property -n 0
-# msat_check_ltlspec_inc_coi -n 1 -k 10 -I #128.53s
-# msat_check_ltlspec_sbmc_inc  -n 1 -k %d #69.44s
-msat_check_ltlspec_bmc  -n 1 -k 5
+# build_simplified_property -n 0
+# msat_check_ltlspec_inc_coi -n 0 -k 5 #128.53s
+# msat_check_ltlspec_sbmc_inc  -n 0 -k %d #69.44s
+msat_check_ltlspec_bmc  -n 0 -k 10
 # check_ltlspec_inc_coi_bmc -n 1 -k 10
 quit
 """ % NUXMV_BOUND

@@ -13,7 +13,7 @@ from pycolite.util.util import create_nuxmv_cmd_file
 sys.setrecursionlimit(10000)
 
 LOG = logging.getLogger('pycolite')
-LOG.setLevel(logging.CRITICAL)
+LOG.setLevel(logging.DEBUG)
 
 ch = logging.StreamHandler()
 #ch.setLevel(logging.DEBUG)
