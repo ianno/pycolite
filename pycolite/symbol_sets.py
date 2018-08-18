@@ -19,6 +19,7 @@ class Ltl3baSymbolSet(object):
         'GLOBALLY' : r'G',
         'EVENTUALLY' : r'F',
         'NEXT' : r'X',
+        'VAR_NEXT' : r'X',
         'UNTIL' : r'U',
         'RELEASE' : r'R',
         'WEAK_UNTIL' : r'W',
@@ -48,12 +49,15 @@ class NusmvSymbolSet(object):
     you can trim later
     '''
 
+
+    #TODO: fix parser to add next only if there is an =
     symbols = {
         'AND' : r'&',
         'OR' : r'|',
         'GLOBALLY' : r'G',
         'EVENTUALLY' : r'F',
         'NEXT' : r'X',
+        'VAR_NEXT' : r'next',
         'UNTIL' : r'U',
         'RELEASE' : r'V',
         'WEAK_UNTIL' : r'W',

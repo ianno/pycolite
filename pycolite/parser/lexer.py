@@ -13,6 +13,7 @@ class BaseSymbolSet(object):
         'GLOBALLY' : r'G',
         'EVENTUALLY' : r'F',
         'NEXT' : r'X',
+        'VAR_NEXT' : r'X',
         'UNTIL' : r'U',
         'RELEASE' : r'R',
         'WEAK_UNTIL' : r'W',
@@ -39,7 +40,7 @@ class Lexer(object):
 
     tokens = ['LITERAL', 'CONSTANT', 'AND', 'OR',
         'NOT', 'IMPLICATION', 'DOUBLE_IMPLICATION', 'EQUALITY',
-        'GLOBALLY', 'EVENTUALLY', 'NEXT', 'UNTIL', 'RELEASE',
+        'GLOBALLY', 'EVENTUALLY', 'NEXT', 'VAR_NEXT', 'UNTIL', 'RELEASE',
         'WEAK_UNTIL', 'LPAREN', 'RPAREN', 'TRUE', 'FALSE',
         'GE', 'GEQ', 'LE', 'LEQ', 'ADD', 'SUB', 'MUL', 'DIV']
 

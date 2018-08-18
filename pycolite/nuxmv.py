@@ -216,7 +216,7 @@ def verify_tautology(formula, prefix='',
     var_str = _process_var_decl(literals)
 
     smv_txt = MODULE_TEMPLATE % (var_str, formula_str)
-
+    # LOG.critical(smv_txt)
     return verify_tautology_smv(smv_txt, prefix=prefix,
                      tool_location=tool_location,
                      source_location=source_location,
@@ -245,6 +245,7 @@ def ltl2smv(formula, prefix=None, include_vars=None, parameters=None, delete_fil
     formula_str = formula.generate(symbol_set=NusmvSymbolSet,
                                    ignore_precedence=True)
 
+    # LOG.critical(formula_str)
     var_str = _process_var_decl(include_vars).strip()
 
     with temp_file:
@@ -444,7 +445,8 @@ class NuxmvCompatibilityStrategy(NuxmvContractInterface):
 
         contract_name = self.contract.name_attribute.unique_name
 
-        f = Conjunction(self.contract.assume_formula, self.contract.guarantee_formula)
+        # f = Conjunction(self.contract.assume_formula, self.contract.guarantee_formula)
+        f = self.contract.assume_formula
         #f = Negation(f)
 
         return not is_empty_formula(f, \
@@ -473,10 +475,10 @@ class NuxmvConsistencyStrategy(NuxmvContractInterface):
         '''
         Override from ConsistencyStrategy
         '''
+        f = Conjunction(self.contract.assume_formula, self.contract.guarantee_formula)
 
         contract_name = self.contract.name_attribute.unique_name
-        return not is_empty_formula(self.contract.guarantee_formula, \
-                prefix='%s_consistency_nuxmv_' % contract_name, \
+        return not is_empty_formula(f,
                 tool_location=self.tool_location, \
                 delete_file=self.delete_files)
 

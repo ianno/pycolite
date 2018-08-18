@@ -19,9 +19,9 @@ PRECEDENCE_TUPLE = (
     ('left', 'DOUBLE_IMPLICATION'),
     ('left', 'OR'),
     ('left', 'AND'),
+    ('left', 'GE', 'GEQ', 'LE', 'LEQ', 'EQUALITY'),
     ('left', 'UNTIL', 'RELEASE', 'WEAK_UNTIL'),
     ('right', 'GLOBALLY', 'EVENTUALLY'),
-    ('left', 'GE', 'GEQ', 'LE', 'LEQ', 'EQUALITY'),
     ('left', 'ADD', 'SUB'),
     ('left', 'MUL', 'DIV'),
     ('right', 'NOT', 'NEXT'),
@@ -67,7 +67,7 @@ class LTLFormula(Observer):
         '''
         doc
         '''
-        if symbol_set == None:
+        if symbol_set is None:
             symbol_set = BaseSymbolSet
 
         return symbol_set.symbols[self.Symbol]
@@ -485,16 +485,28 @@ class UnaryFormula(LTLFormula):
 
 
 
-    def __generate_unary(self, right_string, symbol_set=None, with_base_names=False, ignore_precedence=False):
+    def _generate_unary(self, right_string, symbol_set=None, with_base_names=False, ignore_precedence=False,
+                        force_symbol=None, right_symbol=None):
         '''
         doc
         '''
-        if symbol_set == None:
+        if symbol_set is None:
             symbol_set = BaseSymbolSet
 
-        right_symbol = self.right_formula.Symbol
 
-        current_symbol_index, current_symbol_direction = find_precedence_index(self.Symbol)
+        if right_symbol is None:
+            right_symbol = self.right_formula.Symbol
+
+        if force_symbol is not None:
+            current_symbol = force_symbol
+        else:
+            current_symbol = symbol_set.symbols[self.Symbol]
+
+        try:
+            current_symbol_index, current_symbol_direction = find_precedence_index(self.Symbol)
+        except NotFoundError:
+            current_symbol_index = len(PRECEDENCE_TUPLE)+1
+            current_symbol_direction = 'right'
 
         try:
             right_index, _ = find_precedence_index(right_symbol)
@@ -512,7 +524,7 @@ class UnaryFormula(LTLFormula):
             else:
                 raise NotImplementedError
 
-        return '%s %s' % (symbol_set.symbols[self.Symbol], right_string)
+        return '%s %s' % (current_symbol, right_string)
 
     def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False, prefix=''):
         '''
@@ -520,7 +532,7 @@ class UnaryFormula(LTLFormula):
         '''
         right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence, prefix)
 
-        return self.__generate_unary(right_string, symbol_set, with_base_names, ignore_precedence)
+        return self._generate_unary(right_string, symbol_set, with_base_names, ignore_precedence)
 
 
 class Conjunction(BinaryFormula):
@@ -584,6 +596,42 @@ class Next(UnaryFormula):
     '''
     Symbol = 'NEXT'
 
+    def generate(self, symbol_set=None, with_base_names=False, ignore_precedence=False, prefix=''):
+        '''
+        generate full formula string
+        '''
+
+        if symbol_set is None:
+            symbol_set = BaseSymbolSet
+
+        if symbol_set is BaseSymbolSet:
+            count = 1
+            right = self.right_formula
+
+            while type(right) is Next:
+                count += 1
+                right = right.right_formula
+
+            right_string = right.generate(symbol_set, with_base_names, ignore_precedence, prefix)
+
+            if count > 1:
+                symbol = '%s%d' % (symbol_set.symbols[self.Symbol], count)
+                right_symbol = right.Symbol
+            else:
+                symbol = None
+                right_symbol = None
+
+            return self._generate_unary(right_string, symbol_set, with_base_names, ignore_precedence, force_symbol=symbol, right_symbol=right_symbol)
+        else:
+            right_string = self.right_formula.generate(symbol_set, with_base_names, ignore_precedence, prefix)
+
+            return self._generate_unary(right_string, symbol_set, with_base_names, ignore_precedence)
+
+class VarNext(UnaryFormula):
+    '''
+    doc
+    '''
+    Symbol = 'VAR_NEXT'
 
 class Until(BinaryFormula):
     '''
