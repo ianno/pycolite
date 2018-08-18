@@ -40,6 +40,13 @@ class LType(object):
             return True
         return False
 
+
+class FrozenVar(object):
+    '''
+    label class to indicate a frozen variable
+    '''
+    pass
+
 class Bool(LType):
     '''
     Bool type
@@ -51,7 +58,7 @@ class Bool(LType):
         '''
         return BOOL_TYPE
 
-class FrozenBool(Bool):
+class FrozenBool(Bool, FrozenVar):
     '''
     Bool type
     '''
@@ -73,7 +80,7 @@ class Int(Bool):
         '''
         return INT_TYPE
 
-class FrozenInt(Int):
+class FrozenInt(Int, FrozenVar):
     '''
     Define integer
     '''

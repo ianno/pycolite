@@ -17,7 +17,7 @@ from pycolite.nuxmv import (NuxmvRefinementStrategy, NuxmvCompatibilityStrategy,
                          NuxmvConsistencyStrategy, NuxmvApproximationStrategy)
 from abc import ABCMeta, abstractmethod
 from pycolite import LOG
-from pycolite.types import Int, Bool, Float
+from pycolite.types import Int, Bool, Float, FrozenInt, FrozenBool
 
 LOG.debug('in contract.py')
 
@@ -219,8 +219,12 @@ class Contract(object):
                     name = elem[0]
                     if issubclass(elem[1], Float):
                         self.type_dir[name] = Float()
+                    # elif issubclass(elem[1], FrozenInt):
+                    #     self.type_dir[name] = FrozenInt()
                     elif issubclass(elem[1], Int):
                         self.type_dir[name] = Int()
+                    # elif issubclass(elem[1], FrozenBool):
+                    #     self.type_dir[name] = FrozenBool()
                     elif issubclass(elem[1], Bool):
                         self.type_dir[name] = Bool()
 
@@ -259,8 +263,12 @@ class Contract(object):
                     name = elem[0]
                     if issubclass(elem[1], Float):
                         self.type_dir[name] = Float()
+                    elif issubclass(elem[1], FrozenInt):
+                        self.type_dir[name] = FrozenInt()
                     elif issubclass(elem[1], Int):
                         self.type_dir[name] = Int()
+                    elif issubclass(elem[1], FrozenBool):
+                        self.type_dir[name] = FrozenBool()
                     elif issubclass(elem[1], Bool):
                         self.type_dir[name] = Bool()
 
