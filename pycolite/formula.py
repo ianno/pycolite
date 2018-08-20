@@ -24,7 +24,7 @@ PRECEDENCE_TUPLE = (
     ('right', 'GLOBALLY', 'EVENTUALLY'),
     ('left', 'ADD', 'SUB'),
     ('left', 'MUL', 'DIV'),
-    ('right', 'NOT', 'NEXT'),
+    ('right', 'NOT', 'NEXT', 'CONSTANT'),
 )
 
 class NotFoundError(Exception):

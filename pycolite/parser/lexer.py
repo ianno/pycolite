@@ -83,6 +83,7 @@ class Lexer(object):
         self.t_GLOBALLY= symbol_set_cls.symbols['GLOBALLY']
         self.t_EVENTUALLY= symbol_set_cls.symbols['EVENTUALLY']
         self.t_NEXT = symbol_set_cls.symbols['NEXT']
+        self.t_VAR_NEXT = symbol_set_cls.symbols['VAR_NEXT']
         self.t_UNTIL = symbol_set_cls.symbols['UNTIL']
         self.t_RELEASE = symbol_set_cls.symbols['RELEASE']
         self.t_WEAK_UNTIL = symbol_set_cls.symbols['WEAK_UNTIL']

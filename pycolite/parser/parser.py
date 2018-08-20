@@ -65,24 +65,29 @@ class Parser(object):
         p[0] = formula.Eventually(p[2])
 
     def p_expr_next(self, p):
-        '''expr : NEXT CONSTANT expr
-                | NEXT expr'''
+        '''expr : NEXT expr'''
         # if type(p[2]) == formula.Literal:# and type(p[2].l_type) != formula.Bool:
         #     p[0] = formula.VarNext(p[2])
         # else:
         #     p[0] = formula.Next(p[2])
-        if len(p) == 4:
-            val = int(p[2])
 
-            c = p[3]
+        p[0] = formula.Next(p[2])
 
-            for _ in range(val):
-                c = formula.Next(c)
+    def p_expr_multinext(self, p):
+        '''expr : NEXT CONSTANT expr %prec CONSTANT'''
+        # if type(p[2]) == formula.Literal:# and type(p[2].l_type) != formula.Bool:
+        #     p[0] = formula.VarNext(p[2])
+        # else:
+        #     p[0] = formula.Next(p[2])
 
-            p[0] = c
+        val = int(p[2])
 
-        elif len(p) == 3:
-            p[0] = formula.Next(p[2])
+        c = p[3]
+
+        for _ in range(val):
+            c = formula.Next(c)
+
+        p[0] = c
 
     def p_expr_until(self, p):
         '''expr : expr UNTIL expr'''
