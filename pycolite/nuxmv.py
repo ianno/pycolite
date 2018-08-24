@@ -8,7 +8,7 @@ from pycolite.interface_strategy import (RefinementStrategy,
             CompatibilityStrategy, ConsistencyStrategy, ApproximationStrategy)
 from tempfile import NamedTemporaryFile
 from subprocess import check_output, STDOUT
-from pycolite.formula import Negation, Implication, Conjunction
+from pycolite.formula import *
 from pycolite.symbol_sets import NusmvSymbolSet
 from ConfigParser import SafeConfigParser
 from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
@@ -39,6 +39,17 @@ LTLSPEC (
 
 );
 '''
+
+# CEX_MODULE_TEMPLATE = '''
+# MODULE Cex_%d(%s)
+#     %s
+#
+# LTLSPEC (
+#
+# %s
+#
+# );
+# '''
 
 TEMP_FILES_PATH = '/tmp/'
 NUXMV_TRUE = 'is true\n'
@@ -216,13 +227,387 @@ def verify_tautology(formula, prefix='',
     var_str = _process_var_decl(literals)
 
     smv_txt = MODULE_TEMPLATE % (var_str, formula_str)
-    # LOG.critical(smv_txt)
+    LOG.critical(smv_txt)
     return verify_tautology_smv(smv_txt, prefix=prefix,
                      tool_location=tool_location,
                      source_location=source_location,
                      delete_file=delete_file,
                      return_trace=return_trace)
 
+
+def derive_valuation_from_trace(trace, variables, max_horizon=None):
+    """
+    Derives a formula encoding the input sequence used in the trace
+    :param trace:
+    :param variables:
+    :return:
+    """
+
+    time_sequence = []
+    i = -1
+
+    unique_names = {p.unique_name: p for p in variables}
+
+    # LOG.debug(trace)
+    # LOG.debug(monitored_vars)
+
+    #create structure to record values
+
+    # #process only the first one
+    # p = monitored_vars.keys()[0]
+    # for p in input_variables:
+    #     # LOG.debug(p.base_name)
+    #     # LOG.debug(p.unique_name)
+    #     c_vars[p.unique_name]= None
+    #     var_assign[p] = set()
+    #
+    #     for v_p in input_variables[p]['ports']:
+    #         # LOG.debug(v_p.base_name)
+    #         # LOG.debug(v_p.unique_name)
+    #         c_vars[v_p.unique_name] = None
+    #         var_assign[p].add(v_p)
+
+
+    # LOG.debug(c_vars)
+    lines = trace.split('\n')
+
+    after_preamble = False
+    pre_trace = True
+    lasso_index = -1
+
+    for line in lines:
+        line = line.strip()
+
+        # LOG.debug(line)
+
+        ## Only if with coi
+        # if pre_trace:
+        #     if not line.startswith('-- Trace was successfully completed.'):
+        #         continue
+        #     else:
+        #         pre_trace = False
+        if not after_preamble:
+            if line.startswith('Trace Type: Counterexample'):
+                after_preamble = True
+                continue
+                # LOG.debug('after preamble')
+            continue
+        # done with the preamble
+        # analyze state by state
+        if line.startswith('->'):
+            i = i + 1
+            #time_sequence.append({})
+            if i == 0:
+                time_sequence.append({x: None for x in unique_names})
+            else:
+                time_sequence.append({x: time_sequence[i-1][x] for x in unique_names})
+
+            # new state, check consistency among vars
+            # LOG.debug(c_vars)
+            # for p in input_variables:
+            #
+            #     if i > 0:
+            #         time_sequence[i][p.unique_name] = time_sequence[i-1][p.unique_name]
+            #     else:
+            #         time_sequence[i][p.unique_name] = Constant(0)
+
+            # LOG.debug(diff)
+
+
+        elif line.startswith('--'):
+            if lasso_index > -1:
+                continue #already have a loop
+            # indicates loop in trace, skip line
+            lasso_index = i+1
+        else:
+            line_elems = line.split('=')
+            line_elems = [l.strip() for l in line_elems]
+
+            # LOG.debug(line_elems)
+            # LOG.debug(c_vars)
+
+            if line_elems[0] in unique_names:
+                # base_n = monitored_vars[line_elems[0]]
+
+                if line_elems[1] == 'TRUE':
+                    val = TrueFormula()
+                elif line_elems[1] == 'FALSE':
+                    val = FalseFormula()
+                else:
+                    try:
+                        val = int(line_elems[1])
+                    except ValueError:
+                        val = float(line_elems[1])
+
+                    val = Constant(val)
+
+                time_sequence[i][line_elems[0]] = val
+
+    # time_sequence = time_sequence[:-1]
+
+    formula_bits = []
+    for i in range(len(time_sequence)):
+
+        inner = []
+
+        for u_name, val in time_sequence[i].items():
+            inner.append(Equivalence(unique_names[u_name].literal, val, merge_literals=False))
+
+        if len(inner) > 0:
+            inner = reduce(lambda x, y: Conjunction(x, y, merge_literals=False), inner)
+
+            for j in range(i):
+                inner = Next(inner)
+
+            formula_bits.append(inner)
+
+    # formula_bits has i elements. We need to replicate the lasso sequence
+    diff = len(formula_bits) - lasso_index
+    horizon = len(formula_bits)
+    # LOG.debug(trace)
+    LOG.debug(diff)
+
+    #include full loops. use max_horizon to figure out how many loops you need.
+    while diff > 0 and max_horizon is not None and horizon <= max_horizon:
+        partial = []
+        for j in range(diff, 0, -1):
+            partial.append(formula_bits[-j])
+        #add horizons
+
+        for j in range(len(partial)):
+            for h in range(diff):
+                partial[j] = Next(partial[j])
+
+        formula_bits += partial
+        horizon = len(formula_bits)
+
+        # if horizon > max_horizon+1:
+        #     formula_bits = formula_bits[:max_horizon+1]
+
+
+    try:
+        conj = reduce(lambda x, y: Conjunction(x, y, merge_literals=False), formula_bits)
+    except TypeError:
+        formula = None
+    else:
+        # formula = Globally(Eventually(conj))
+        formula = conj
+
+
+    return formula, lasso_index
+
+def trace_analysis_for_loc(trace, vars):
+    """
+    Analyize the counterexample do derive location vars
+    :return:
+    :param trace:
+    :param checked_variables:
+    :return:
+    """
+    # diff = set()
+    # c_vars = {p.base_name: {} for p in monitored_vars.keys()}
+    #
+    # for u_name, b_name in monitored_vars.items():
+    #     c_vars[b_name][u_name] = None
+
+    c_vars = {}
+    var_assign = {}
+
+
+    for p in vars:
+        # LOG.debug(p.base_name)
+        # LOG.debug(p.unique_name)
+        c_vars[p.unique_name]= None
+
+
+
+
+    # LOG.debug(c_vars)
+    lines = trace.split('\n')
+
+    after_preamble = False
+    pre_trace = True
+
+    #seen = {p_name for p_name in c_vars}
+
+    for line in lines:
+        line = line.strip()
+        #
+        # LOG.debug(line)
+        # LOG.debug(seen)
+        if not pre_trace:
+            if not line.startswith('-- Trace was successfully completed.'):
+                continue
+            else:
+                pre_trace = True
+
+        if not after_preamble:
+            if not line.startswith('->'):
+                continue
+            else:
+                after_preamble = True
+                continue
+                # LOG.debug('after preamble')
+
+        # done with the preamble
+        # analyze state by state
+        if line.startswith('->'):
+            break
+        elif line.startswith('--'):
+            # indicates loop in trace, skip line
+            pass
+        else:
+            line_elems = line.split('=')
+            line_elems = [l.strip() for l in line_elems]
+
+            # LOG.debug(line_elems)
+            # LOG.debug(c_vars)
+
+            if line_elems[0] in c_vars:
+                # seen.add(line_elems[0])
+                # base_n = monitored_vars[line_elems[0]]
+
+                val = int(line_elems[1])
+                c_vars[line_elems[0]] = val
+
+
+    for v in vars:
+        var_assign[v] = c_vars[v.unique_name]
+
+    # for c in var_assign:
+    #     LOG.debug('**')
+    #     LOG.debug(c.base_name)
+    #     LOG.debug(c.unique_name)
+    #     assert len(var_assign[c])==1
+    #     for v in var_assign[c]:
+    #         LOG.debug('.')
+    #         LOG.debug(v.base_name)
+    #         LOG.debug(v.unique_name)
+
+
+    # #return assignement
+    # ret_assign = {}
+    #
+    # for p in var_assign:
+    #     orig_level, orig_port = monitored_vars[p]['orig']
+    #     ret_assign[(orig_level, orig_port)] = set()
+    #
+    #     for v in var_assign[p]:
+    #         origv_level, origv_port = monitored_vars[p]['ports'][v]
+    #         ret_assign[(orig_level, orig_port)].add((origv_level, origv_port))
+    #         break
+
+    return var_assign
+
+def build_module_from_trace(trace, variables, module_name='instance'):
+    '''
+
+    :param trace:
+    :return:
+    '''
+    time_sequence = []
+    i = -1
+
+    unique_names = {p.unique_name: p for p in variables}
+
+    lines = trace.split('\n')
+
+    after_preamble = False
+    pre_trace = True
+    lasso_index = -1
+
+    for line in lines:
+        line = line.strip()
+
+        # LOG.debug(line)
+
+        ## Only if with coi
+        # if pre_trace:
+        #     if not line.startswith('-- Trace was successfully completed.'):
+        #         continue
+        #     else:
+        #         pre_trace = False
+        if not after_preamble:
+            if line.startswith('Trace Type: Counterexample'):
+                after_preamble = True
+                continue
+                # LOG.debug('after preamble')
+            continue
+        # done with the preamble
+        # analyze state by state
+        if line.startswith('->'):
+            i = i + 1
+            # time_sequence.append({})
+            if i == 0:
+                time_sequence.append({x: None for x in unique_names})
+            else:
+                time_sequence.append({x: time_sequence[i - 1][x] for x in unique_names})
+
+            # new state, check consistency among vars
+            # LOG.debug(c_vars)
+            # for p in input_variables:
+            #
+            #     if i > 0:
+            #         time_sequence[i][p.unique_name] = time_sequence[i-1][p.unique_name]
+            #     else:
+            #         time_sequence[i][p.unique_name] = Constant(0)
+
+            # LOG.debug(diff)
+
+
+        elif line.startswith('--'):
+            # if lasso_index > -1:
+            #     continue  # already have a loop
+            # indicates loop in trace, skip line
+            lasso_index = i + 1
+        else:
+            line_elems = line.split('=')
+            line_elems = [l.strip() for l in line_elems]
+
+            # LOG.debug(line_elems)
+            # LOG.debug(c_vars)
+
+            if line_elems[0] in unique_names:
+                # base_n = monitored_vars[line_elems[0]]
+
+                val = line_elems[1]
+
+                time_sequence[i][line_elems[0]] = val
+
+    # time_sequence = time_sequence[:-1]
+    states = len(time_sequence)
+    # module = 'MODULE %s(s)\n  VAR state: 0..%d;\n' % (module_name, states)
+    module = 'MODULE %s(s)\n  VAR state: integer;\n' % (module_name)
+    init_vs = ['s.%s = %s' % (uname, val) for (uname, val) in time_sequence[0].items()]
+
+    # we need to define the first variable assignment in the INIT section, otherwise the module
+    # might deadlock. each state will then define the next variable step.
+    # It is a problem, though, when we need to loop all the way to the first state, as we need to replicate the init
+    # condition as a next statement.
+    # We can solve setting the init state to 1 with var values of 0 and adding a state 0 in trans.
+    init = '  INIT\n    state = 1 & %s\n' % (' & '.join(init_vs))
+
+    module = module + init
+
+    for i in range(0, len(time_sequence)):
+        trans_vs = ['next(s.%s) = %s' % (uname, val) for (uname, val) in time_sequence[i].items()]
+
+        next_state = i+1
+        #manage last trans
+        if i == len(time_sequence)-1:
+            if lasso_index > -1:
+                next_state = lasso_index
+
+        trans = '  TRANS\n    state = %d -> %s & next(state) = %d\n' % (i, ' & '.join(trans_vs), next_state)
+        module += trans
+
+    #add final transition, loop in state
+    trans = '  TRANS\n    state = %d -> next(state) = %d\n' % (states, states)
+    module += trans
+
+    #return
+    module += '\n'
+    return module
 
 def ltl2smv(formula, prefix=None, include_vars=None, parameters=None, delete_file=True,
             ltl2smv_location=NuxmvPathLoader.get_ltl2smv_path()):
