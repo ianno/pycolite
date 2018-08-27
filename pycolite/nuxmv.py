@@ -227,7 +227,7 @@ def verify_tautology(formula, prefix='',
     var_str = _process_var_decl(literals)
 
     smv_txt = MODULE_TEMPLATE % (var_str, formula_str)
-    LOG.critical(smv_txt)
+    #LOG.critical(smv_txt)
     return verify_tautology_smv(smv_txt, prefix=prefix,
                      tool_location=tool_location,
                      source_location=source_location,
@@ -556,8 +556,8 @@ def build_module_from_trace(trace, variables, module_name='instance'):
 
 
         elif line.startswith('--'):
-            # if lasso_index > -1:
-            #     continue  # already have a loop
+            if lasso_index > -1:
+                continue  # already have a loop
             # indicates loop in trace, skip line
             lasso_index = i + 1
         else:
