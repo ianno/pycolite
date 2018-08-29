@@ -5,7 +5,7 @@ Author: Antonio Iannopollo
 '''
 
 from pycolite.interface_strategy import (RefinementStrategy,
-            CompatibilityStrategy, ConsistencyStrategy, ApproximationStrategy)
+            CompatibilityStrategy, ConsistencyStrategy, ApproximationStrategy, DeterminismStrategy)
 from tempfile import NamedTemporaryFile
 from subprocess import check_output, STDOUT
 from pycolite.formula import *
@@ -14,7 +14,7 @@ from ConfigParser import SafeConfigParser
 from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
 import os
 from pycolite import LOG
-from pycolite.types import Bool, Int, FrozenInt, Float, FrozenBool
+from pycolite.types import Bool, Int, FrozenInt, Float, FrozenBool, FrozenVar
 from pycolite.util.util import NUXMV_CMD_FILENAME, NUXMV_BOUND, LTL2SMV
 from pycolite.attribute import Attribute
 
@@ -157,11 +157,17 @@ def _process_var_decl(vars):
         if isinstance(l.l_type, Float):
             var_list.append('\tVAR %s: real;\n' % l.unique_name)
         elif isinstance(l.l_type, FrozenInt):
-            var_list.append('\tFROZENVAR %s: integer;\n' % l.unique_name)
+            if l.l_type.min_v is not None and l.l_type.max_v is not None:
+                var_list.append('\tFROZENVAR %s: %d..%d;\n' % (l.unique_name, l.l_type.min_v, l.l_type.max_v))
+            else:
+                var_list.append('\tFROZENVAR %s: integer;\n' % l.unique_name)
         elif isinstance(l.l_type, FrozenBool):
             var_list.append('\tFROZENVAR %s: boolean;\n' % l.unique_name)
         elif isinstance(l.l_type, Int):
-            var_list.append('\tVAR %s: integer;\n' % l.unique_name)
+            if l.l_type.min_v is not None and l.l_type.max_v is not None:
+                var_list.append('\tVAR %s: %d..%d;\n' % (l.unique_name, l.l_type.min_v, l.l_type.max_v))
+            else:
+                var_list.append('\tVAR %s: integer;\n' % l.unique_name)
         elif isinstance(l.l_type, Bool):
             var_list.append('\tVAR %s: boolean;\n' % l.unique_name)
             # var_list.append('\t%s: %d..%d;\n' % (l.unique_name, l.l_type.lower, l.l_type.upper))
@@ -869,6 +875,76 @@ class NuxmvConsistencyStrategy(NuxmvContractInterface):
 
 
 ConsistencyStrategy.register(NuxmvConsistencyStrategy)
+
+
+class NuxmvDeterminismStrategy(NuxmvContractInterface):
+    '''
+    Defines an object used to check consistency of a contract
+    interfacing with nuxmv
+    '''
+    def __init__(self, contract, tool_location=NuxmvPathLoader.get_path(), delete_files=True):
+        '''
+        override constructor
+        '''
+        self.delete_files = delete_files
+
+        super(NuxmvDeterminismStrategy, self).__init__(contract, tool_location)
+
+    def check_determinism(self, return_trace=False):
+        '''
+        Override from DeterminismStrategy
+        '''
+
+        c1 = self.contract.copy()
+        c2 = self.contract.copy()
+
+        #all inputs are the same
+        in_list = [TrueFormula()]
+        for n in self.contract.input_ports_dict:
+            in_list.append(Globally(Equivalence(c1.input_ports_dict[n].literal,
+                                                c2.input_ports_dict[n].literal,
+                                                merge_literals=False)))
+
+        in_f = reduce(lambda x,y: Conjunction(x,y,merge_literals=False), in_list)
+
+        #all parameters are also  the same
+        p_list = [TrueFormula()]
+        for n, port in self.contract.output_ports_dict.items():
+            if isinstance(port.l_type, FrozenVar):
+                p_list.append(Globally(Equivalence(c1.output_ports_dict[n].literal,
+                                                    c2.output_ports_dict[n].literal,
+                                                    merge_literals=False)))
+
+        p_f = reduce(lambda x,y: Conjunction(x,y,merge_literals=False), p_list)
+
+        #we need to verify that also the output are the same
+        out_list = [TrueFormula()]
+        for n in self.contract.output_ports_dict:
+            out_list.append(Globally(Equivalence(c1.output_ports_dict[n].literal,
+                                                c2.output_ports_dict[n].literal,
+                                                merge_literals=False)))
+
+            out_f = reduce(lambda x,y: Conjunction(x,y,merge_literals=False), out_list)
+
+
+        left = Conjunction(c1.assume_formula, c2.assume_formula, merge_literals=False)
+        left = Conjunction(p_f, left, merge_literals=False)
+        left = Conjunction(in_f, left, merge_literals=False)
+
+
+        center = Conjunction(c1.guarantee_formula, c2.guarantee_formula, merge_literals=False)
+
+
+        impl1 = Implication(center, out_f, merge_literals=False)
+        impl_all = Implication(left, impl1, merge_literals=False)
+
+        return verify_tautology(impl_all,
+                tool_location=self.tool_location,
+                delete_file=self.delete_files,
+                return_trace=return_trace)
+
+
+DeterminismStrategy.register(NuxmvDeterminismStrategy)
 
 
 class NuxmvApproximationStrategy(NuxmvContractInterface):

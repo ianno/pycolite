@@ -23,9 +23,9 @@ TEMP_OPT = 'temp_dir'
 NUXMV_OPT = 'nuxmv'
 NUXMV_BOUND = 20
 NUXMV_CMD_SOURCE = """set on_failure_script_quits 
-# set cone_of_influence
+set cone_of_influence
 go_msat
-build_simplified_property -n 0
+build_simplified_property -n 0 
 # msat_check_ltlspec_inc_coi -n 0 -k 10 #128.53s #remember to fix the trace analyzer code if use this
 # msat_check_ltlspec_sbmc_inc  -n 0 -k %d #69.44s 
 msat_check_ltlspec_bmc  -n 1 -k 20 
@@ -44,7 +44,7 @@ def create_main_config_file(filepath, section_list, option_dict):
     config = SafeConfigParser()
 
     for section in section_list:
-        config.add_section(section)
+        config.add_section(sqection)
 
     for section, (option, value) in option_dict.items():
         config.set(section, option, value)

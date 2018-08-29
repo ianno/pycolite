@@ -74,6 +74,10 @@ class Int(Bool):
     Define integer
     '''
 
+    def __init__(self, min_v=None, max_v=None):
+        self.min_v = min_v
+        self.max_v = max_v
+
     def __repr__(self):
         '''
         pretty print

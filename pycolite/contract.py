@@ -9,12 +9,14 @@ from pycolite.parser.lexer import BaseSymbolSet
 from pycolite.attribute import Attribute
 from pycolite.formula import Literal, Conjunction, Disjunction, Negation
 from pycolite.port import *
+import inspect
 from copy import deepcopy
 #from pycolite.ltl3ba import (Ltl3baRefinementStrategy, Ltl3baCompatibilityStrategy,
 #                         Ltl3baConsistencyStrategy)
 
 from pycolite.nuxmv import (NuxmvRefinementStrategy, NuxmvCompatibilityStrategy,
-                         NuxmvConsistencyStrategy, NuxmvApproximationStrategy)
+                         NuxmvConsistencyStrategy, NuxmvApproximationStrategy,
+                            NuxmvDeterminismStrategy)
 from abc import ABCMeta, abstractmethod
 from pycolite import LOG
 from pycolite.types import Int, Bool, Float, FrozenInt, FrozenBool
@@ -217,16 +219,20 @@ class Contract(object):
             for elem in input_ports:
                 if isinstance(elem, (list, tuple)):
                     name = elem[0]
-                    if issubclass(elem[1], Float):
-                        self.type_dir[name] = Float()
-                    # elif issubclass(elem[1], FrozenInt):
-                    #     self.type_dir[name] = FrozenInt()
-                    elif issubclass(elem[1], Int):
-                        self.type_dir[name] = Int()
-                    # elif issubclass(elem[1], FrozenBool):
-                    #     self.type_dir[name] = FrozenBool()
-                    elif issubclass(elem[1], Bool):
-                        self.type_dir[name] = Bool()
+
+                    if inspect.isclass(elem[1]):
+                        if issubclass(elem[1], Float):
+                            self.type_dir[name] = Float()
+                        # elif issubclass(elem[1], FrozenInt):
+                        #     self.type_dir[name] = FrozenInt()
+                        elif issubclass(elem[1], Int):
+                            self.type_dir[name] = Int()
+                        # elif issubclass(elem[1], FrozenBool):
+                        #     self.type_dir[name] = FrozenBool()
+                        elif issubclass(elem[1], Bool):
+                            self.type_dir[name] = Bool()
+                    else:
+                        self.type_dir[name] = elem[1]
 
                     temp_list.append(name)
                 else:
@@ -261,16 +267,19 @@ class Contract(object):
             for elem in output_ports:
                 if isinstance(elem, (list, tuple)):
                     name = elem[0]
-                    if issubclass(elem[1], Float):
-                        self.type_dir[name] = Float()
-                    elif issubclass(elem[1], FrozenInt):
-                        self.type_dir[name] = FrozenInt()
-                    elif issubclass(elem[1], Int):
-                        self.type_dir[name] = Int()
-                    elif issubclass(elem[1], FrozenBool):
-                        self.type_dir[name] = FrozenBool()
-                    elif issubclass(elem[1], Bool):
-                        self.type_dir[name] = Bool()
+                    if inspect.isclass(elem[1]):
+                        if issubclass(elem[1], Float):
+                            self.type_dir[name] = Float()
+                        elif issubclass(elem[1], FrozenInt):
+                            self.type_dir[name] = FrozenInt()
+                        elif issubclass(elem[1], Int):
+                            self.type_dir[name] = Int()
+                        elif issubclass(elem[1], FrozenBool):
+                            self.type_dir[name] = FrozenBool()
+                        elif issubclass(elem[1], Bool):
+                            self.type_dir[name] = Bool()
+                    else:
+                        self.type_dir[name] = elem[1]
 
                     temp_list.append(name)
                 else:
@@ -591,7 +600,7 @@ class Contract(object):
         guarantee formula is not an empty formula
         '''
         if strategy_obj is None:
-            strategy_obj = NuxmvConsistencyStrategy(self, delete_files=False)
+            strategy_obj = NuxmvConsistencyStrategy(self, delete_files=True)
 
         return strategy_obj.check_consistency()
 
@@ -604,9 +613,23 @@ class Contract(object):
         '''
 
         if strategy_obj is None:
-            strategy_obj = NuxmvCompatibilityStrategy(self, delete_files=False)
+            strategy_obj = NuxmvCompatibilityStrategy(self, delete_files=True)
 
         return strategy_obj.check_compatibility()
+
+
+    def is_deterministic(self, return_trace=False, strategy_obj=None):
+        '''
+        returns true if the contract is deterministic, i.e., for each input sequence there is
+        only one possible output sequence
+        :param strategy_obj:
+        :return: boolean
+        '''
+
+        if strategy_obj is None:
+            strategy_obj = NuxmvDeterminismStrategy(self, delete_files=True)
+
+        return strategy_obj.check_determinism(return_trace=return_trace)
 
     def __str__(self):
         '''
@@ -1089,6 +1112,12 @@ class NonCompositeContractError(Exception):
     pass
 
 class NotARefinementError(Exception):
+    '''
+    Raised in case of wrong refinement assertion
+    '''
+    pass
+
+class NotDeterministicError(Exception):
     '''
     Raised in case of wrong refinement assertion
     '''

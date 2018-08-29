@@ -63,6 +63,24 @@ class ConsistencyStrategy:
         '''
         raise NotImplementedError
 
+
+class DeterminismStrategy:
+    '''
+    Metaclass defining the determinism strategy operations
+    '''
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def check_determinism(self, include_trace=False):
+        '''
+        Checks if the calling contract is deterministic, i.e., for each input sequence there is
+        only one possible output sequence
+
+        :returns: boolean
+        '''
+        raise NotImplementedError
+
 class ApproximationStrategy:
     '''
     Metaclass defining the approximation strategy operations
