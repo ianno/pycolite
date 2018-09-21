@@ -11,7 +11,7 @@ from subprocess import check_output, STDOUT
 from pycolite.formula import *
 from pycolite.symbol_sets import NusmvSymbolSet
 from ConfigParser import SafeConfigParser
-from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT
+from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT, NUXMV_CMD_FILENAME_NOLOOP
 import os
 from pycolite import LOG
 from pycolite.types import Bool, Int, FrozenInt, Float, FrozenBool, FrozenVar
@@ -56,6 +56,7 @@ NUXMV_TRUE = 'is true\n'
 NUXMV_BMC_OK = '-- Cannot verify the property'
 NUXMV_BMC_OK_ALT = '-- terminating with bound %d.'%NUXMV_BOUND
 NUXMV_BMC_OK_ALT2 = '-- no counterexample found with bound %d'%NUXMV_BOUND
+NUXMV_BMC_OK_ALT3 = '-- no counterexample found with bound %d and no loop'%NUXMV_BOUND
 
 SIMPLIFY_TEMPLATE_START = '''**** PROPERTY LIST [ Type, Status, Counter-example Number, Name ] ****
 --------------------------  PROPERTY LIST  -------------------------
@@ -84,6 +85,7 @@ class NuxmvPathLoader(object):
     '''
     nuxmv_path = None
     source_path = None
+    source_path_noloop = None
     ltl2smv_path = None
 
     @classmethod
@@ -115,8 +117,18 @@ class NuxmvPathLoader(object):
             nuxmvpath = NuxmvPathLoader.get_path()
             dirpath = os.path.dirname(nuxmvpath)
             cls.source_path = os.path.join(dirpath, NUXMV_CMD_FILENAME)
-
         return cls.source_path
+
+    @classmethod
+    def get_source_path_noloop(cls):
+        '''
+        gets the source cmd file path
+        '''
+        if cls.source_path_noloop is None:
+            nuxmvpath = NuxmvPathLoader.get_path()
+            dirpath = os.path.dirname(nuxmvpath)
+            cls.source_path_noloop = os.path.join(dirpath, NUXMV_CMD_FILENAME_NOLOOP)
+        return cls.source_path_noloop
 
     @classmethod
     def get_ltl2smv_path(cls):
@@ -203,7 +215,8 @@ def verify_tautology_smv(smv_txt, prefix='',
         # LOG.debug(output.endswith(NUXMV_FALSE))
         lines = output.splitlines()
         if (output.endswith(NUXMV_TRUE) or lines[-1].startswith(NUXMV_BMC_OK)
-                or lines[-1].startswith(NUXMV_BMC_OK_ALT) or lines[-1].startswith(NUXMV_BMC_OK_ALT2)):
+                or lines[-1].startswith(NUXMV_BMC_OK_ALT) or lines[-1].startswith(NUXMV_BMC_OK_ALT2)
+                or lines[-1].startswith(NUXMV_BMC_OK_ALT3)):
             val = True
         else:
             # LOG.debug(output)
@@ -321,10 +334,10 @@ def derive_valuation_from_trace(trace, variables, max_horizon=None):
 
 
         elif line.startswith('--'):
-            if lasso_index > -1:
-                continue #already have a loop
+            # if lasso_index > -1:
+            #     continue #already have a loop
             # indicates loop in trace, skip line
-            lasso_index = i+1
+            lasso_index = i+2
         else:
             line_elems = line.split('=')
             line_elems = [l.strip() for l in line_elems]
@@ -562,10 +575,10 @@ def build_module_from_trace(trace, variables, module_name='instance'):
 
 
         elif line.startswith('--'):
-            if lasso_index > -1:
-                continue  # already have a loop
+            # if lasso_index > -1:
+            #     continue  # already have a loop
             # indicates loop in trace, skip line
-            lasso_index = i + 1
+            lasso_index = i + 2
         else:
             line_elems = line.split('=')
             line_elems = [l.strip() for l in line_elems]
@@ -1007,3 +1020,11 @@ class NuxmvApproximationStrategy(NuxmvContractInterface):
 
 
 ApproximationStrategy.register(NuxmvApproximationStrategy)
+
+
+#check tautology file is present
+
+from pycolite.util.util import create_nuxmv_cmd_files
+sourcepath = NuxmvPathLoader.get_source_path()
+sourcepath_noloop = NuxmvPathLoader.get_source_path_noloop()
+create_nuxmv_cmd_files(sourcepath, sourcepath_noloop)
