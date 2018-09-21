@@ -34,6 +34,20 @@ quit
 """ % NUXMV_BOUND
 NUXMV_CMD_FILENAME = 'verify_tautology.cmd'
 
+NUXMV_CMD_SOURCE_NOLOOP = """set on_failure_script_quits 
+set cone_of_influence
+go_msat
+build_simplified_property -n 0 
+# msat_check_ltlspec_inc_coi -n 0 -k 10 #128.53s #remember to fix the trace analyzer code if use this
+# msat_check_ltlspec_sbmc_inc  -n 0 -k %d #69.44s 
+msat_check_ltlspec_bmc  -n 1 -l X -k 20 
+# check_ltlspec_inc_coi_bmc -n 1 -k 10
+quit
+""" % NUXMV_BOUND
+NUXMV_CMD_FILENAME_NOLOOP = 'verify_tautology_noloop.cmd'
+
+
+
 LTL2SMV = 'ltl2smv'
 
 def create_main_config_file(filepath, section_list, option_dict):
@@ -44,7 +58,7 @@ def create_main_config_file(filepath, section_list, option_dict):
     config = SafeConfigParser()
 
     for section in section_list:
-        config.add_section(sqection)
+        config.add_section(section)
 
     for section, (option, value) in option_dict.items():
         config.set(section, option, value)
@@ -84,7 +98,7 @@ def which(program):
     return None
 
 
-def create_nuxmv_cmd_file(sourcepath):
+def create_nuxmv_cmd_files(sourcepath, sourcepath_noloop):
     '''
     Create cmd file for nuxmv if it doesn't exists
     :param sourcepath:
@@ -93,5 +107,8 @@ def create_nuxmv_cmd_file(sourcepath):
 
     with open(sourcepath, 'w+') as fn:
         fn.write(NUXMV_CMD_SOURCE)
+
+    with open(sourcepath_noloop, 'w+') as fn:
+        fn.write(NUXMV_CMD_SOURCE_NOLOOP)
 
     return

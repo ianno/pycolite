@@ -8,12 +8,11 @@ import logging
 import sys
 import os
 import pdb
-from pycolite.util.util import create_nuxmv_cmd_file
 
 sys.setrecursionlimit(10000)
 
 LOG = logging.getLogger('pycolite')
-LOG.setLevel(logging.DEBUG)
+LOG.setLevel(logging.INFO)
 
 ch = logging.StreamHandler()
 #ch.setLevel(logging.DEBUG)
@@ -27,10 +26,6 @@ LOG.addHandler(ch)
 
 LOG.debug('PYCOLITE INIT')
 
-#check tautology file is present
 
-from pycolite.nuxmv import NuxmvPathLoader
-sourcepath = NuxmvPathLoader.get_source_path()
-create_nuxmv_cmd_file(sourcepath)
 
 #pdb.set_trace()
