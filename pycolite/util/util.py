@@ -34,13 +34,13 @@ quit
 """ % NUXMV_BOUND
 NUXMV_CMD_FILENAME = 'verify_tautology.cmd'
 
-NUXMV_CMD_SOURCE_NOLOOP = """set on_failure_script_quits 
+NUXMV_CMD_SOURCE_NOLOOP = """set on_failure_script_quits
 set cone_of_influence
 go_msat
-build_simplified_property -n 0 
+build_simplified_property -n 0
 # msat_check_ltlspec_inc_coi -n 0 -k 10 #128.53s #remember to fix the trace analyzer code if use this
-# msat_check_ltlspec_sbmc_inc  -n 0 -k %d #69.44s 
-msat_check_ltlspec_bmc  -n 1 -l X -k 20 
+# msat_check_ltlspec_sbmc_inc  -n 0 -k %d #69.44s
+msat_check_ltlspec_bmc  -n 1 -l X -k 20
 # check_ltlspec_inc_coi_bmc -n 1 -k 10
 quit
 """ % NUXMV_BOUND
