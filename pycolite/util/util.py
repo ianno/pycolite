@@ -8,7 +8,7 @@ Author: Antonio Iannopollo
 '''
 
 import os
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 import logging
 
 LOG = logging.getLogger()

@@ -17,9 +17,9 @@ def test_formula(request):
 
 def test_parser(test_formula, parser):
     variable = parser.parse(test_formula)
-    print variable
-    print test_formula
-    print variable.generate()
+    print(variable)
+    print(test_formula)
+    print(variable.generate())
 
     assert True
 
@@ -33,7 +33,7 @@ def test_parser_string(wrong_string, parser):
     try:
         parser.parse(wrong_string)
     except GeneralError as error:
-        print 'test found the expected error %s' % error
+        print('test found the expected error %s' % error)
         assert True
     else:
        assert False
@@ -50,10 +50,10 @@ def test_str_formula(test_formula, parser):
     try:
         formula = parser.parse(test_formula)
     except Exception as error:
-        print 'here %s' % error
+        print('here %s' % error)
         assert False
     else:
-        print formula.generate()
+        print(formula.generate())
         assert True
 
 @pytest.fixture(params=[Parser(), int(3)])
@@ -63,8 +63,8 @@ def random_object(request):
 def test_object(random_object, parser):
     try:
         parser.parse(random_object)
-    except TypeError  as error:
-        print 'Found expected TypeError %s' % error
+    except TypeError as error:
+        print('Found expected TypeError %s' % error)
         assert True
     else:
         assert False

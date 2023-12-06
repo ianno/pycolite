@@ -22,7 +22,7 @@ class Parser(object):
 
     def p_error(self, p):
         #LOG.debug('Error')
-        print p.value
+        print(p.value)
         raise GeneralError(p)
 
     def p_expr_and(self, p):
@@ -225,5 +225,5 @@ class GeneralError(Exception):
 if __name__ == '__main__':
     yacc_i = Parser()
     variable = yacc_i.parse("G(hello |   test) -> h & Xe & (v|e & (sss -> q)) #fiu")
-    print variable
-    print variable.generate()
+    print(variable)
+    print(variable.generate())

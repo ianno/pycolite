@@ -9,7 +9,7 @@ Author: Antonio Iannopollo
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 import os
 import pycolite.util.util as util
-from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError, ParsingError
+from configparser import SafeConfigParser, NoSectionError, NoOptionError, ParsingError
 import sys
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -22,32 +22,32 @@ with open('setup.cfg') as filep:
     try:
         setup_cfg.readfp(filep)
     except ParsingError:
-        print 'error parsing setup.cfg'
+        print('error parsing setup.cfg')
         sys.exit(-1)
 
 try:
     nuxmv_path = setup_cfg.get(util.TOOL_SECT, util.NUXMV_OPT)
 except (NoSectionError, NoOptionError):
-    print 'Error loading nuxmv configuration info'
+    print('Error loading nuxmv configuration info')
     #sys.exit(-1)
 
 nuxmv_path = util.which(nuxmv_path)
 
 if nuxmv_path is None:
-    print 'Error, nuxmv path is invalid'
+    print('Error, nuxmv path is invalid')
     sys.exit(-1)
 
 try:
     temp_dir_path = setup_cfg.get(util.PATH_SECT, util.TEMP_OPT)
 except (NoSectionError, NoOptionError):
-    print 'Error loading temp dir configuration info'
+    print('Error loading temp dir configuration info')
     temp_dir_path = ''
     #sys.exit(-1)
 
 temp_dir_path = os.path.abspath(temp_dir_path)
 #make sure the directory exists
 if not os.path.exists(temp_dir_path):
-    print 'creating %s' % temp_dir_path
+    print('creating %s' % temp_dir_path)
     os.makedirs(temp_dir_path)
 
 #write internal config file

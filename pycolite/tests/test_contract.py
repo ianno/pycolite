@@ -237,11 +237,11 @@ def test_print(basic_params):
     '''
     contract = Contract('C', basic_params[0], basic_params[1],
             basic_params[2], basic_params[3], saturated = False)
-    print contract
+    print(contract)
 
     contract2 = Contract('C', basic_params[0], basic_params[1],
             basic_params[2], basic_params[3], saturated = False)
-    print contract2
+    print(contract2)
     assert True
 
 def test_composition_no_common_err(contract_1, contract_2):
@@ -256,10 +256,10 @@ def test_composition_no_common(contract_1, contract_2):
     '''
     test composition of two contracts
     '''
-    print 'no common ports'
-    print 'before composition'
-    print contract_1
-    print contract_2
+    print('no common ports')
+    print('before composition')
+    print(contract_1)
+    print(contract_2)
 
     composition_mapping = CompositionMapping([contract_1, contract_2])
     composition_mapping.add(contract_1.c, 'c1')
@@ -271,7 +271,7 @@ def test_composition_no_common(contract_1, contract_2):
 
     contract_3 = contract_1.compose(contract_2, composition_mapping=composition_mapping)
 
-    print contract_3
+    print(contract_3)
 
     assert len(contract_3.input_ports_dict) == \
             len(contract_1.input_ports_dict) + len(contract_2.input_ports_dict)
@@ -280,23 +280,23 @@ def test_composition_no_common(contract_1, contract_2):
             len(contract_1.output_ports_dict) + \
             len(contract_2.output_ports_dict)
 
-    for port in contract_1.ports_dict.viewvalues():
+    for port in contract_1.ports_dict.values():
         assert port.unique_name not in \
-                [p.unique_name for p in contract_2.ports_dict.viewvalues()]
+                [p.unique_name for p in contract_2.ports_dict.values()]
 
-    for port in contract_2.ports_dict.viewvalues():
+    for port in contract_2.ports_dict.values():
         assert port.unique_name not in \
-                [p.unique_name for p in contract_1.ports_dict.viewvalues()]
+                [p.unique_name for p in contract_1.ports_dict.values()]
 
 
 def test_composition(contract_1, contract_2):
     '''
     test composition of two contracts
     '''
-    print 'merge (b, b) and (a, g)'
-    print 'before composition'
-    print contract_1
-    print contract_2
+    print('merge (b, b) and (a, g)')
+    print('before composition')
+    print(contract_1)
+    print(contract_2)
 
     composition_mapping = CompositionMapping([contract_1, contract_2])
     composition_mapping.connect(contract_1.a, contract_2.g)
@@ -309,11 +309,11 @@ def test_composition(contract_1, contract_2):
 
     contract_3 = contract_1.compose(contract_2, composition_mapping=composition_mapping)
 
-    print contract_3
+    print(contract_3)
 
-    print 'after_composition'
-    print contract_1
-    print contract_2
+    print('after_composition')
+    print(contract_1)
+    print(contract_2)
 
     #a is not input anymore and b is merged
     assert len(contract_3.input_ports_dict) == \
@@ -324,21 +324,21 @@ def test_composition(contract_1, contract_2):
             len(contract_1.output_ports_dict) + \
             len(contract_2.output_ports_dict)
 
-    for port in contract_1.ports_dict.viewvalues():
+    for port in contract_1.ports_dict.values():
         if port.base_name not in ('a', 'b'):
             assert port.unique_name not in \
-                [p.unique_name for p in contract_2.ports_dict.viewvalues()]
+                [p.unique_name for p in contract_2.ports_dict.values()]
         else:
             assert port.unique_name in \
-                [p.unique_name for p in contract_2.ports_dict.viewvalues()]
+                [p.unique_name for p in contract_2.ports_dict.values()]
 
-    for port in contract_2.ports_dict.viewvalues():
+    for port in contract_2.ports_dict.values():
         if port.base_name not in ('g', 'b'):
             assert port.unique_name not in \
-                [p.unique_name for p in contract_1.ports_dict.viewvalues()]
+                [p.unique_name for p in contract_1.ports_dict.values()]
         else:
             assert port.unique_name in \
-                [p.unique_name for p in contract_1.ports_dict.viewvalues()]
+                [p.unique_name for p in contract_1.ports_dict.values()]
 
 def test_out_to_out(contract_1, contract_2):
     '''
@@ -360,14 +360,14 @@ def test_copy(contract_1, contract_2):
     '''
     test copy of contract after composition
     '''
-    print 'copy C1, then merge (b, b) and (a, g) and compose copy'
-    print 'before composition'
-    print contract_1
-    print contract_2
+    print('copy C1, then merge (b, b) and (a, g) and compose copy')
+    print('before composition')
+    print(contract_1)
+    print(contract_2)
 
     c1c = contract_1.copy()
-    print 'copy:'
-    print c1c
+    print('copy:')
+    print(c1c)
 
     composition_mapping = CompositionMapping([c1c, contract_2])
     composition_mapping.connect(c1c.a, contract_2.g)
@@ -379,16 +379,16 @@ def test_copy(contract_1, contract_2):
 
     contract_3 = c1c.compose(contract_2, composition_mapping=composition_mapping)
 
-    print contract_3
+    print(contract_3)
     c3c = contract_3.copy()
 
-    print 'copy of C3'
-    print c3c
+    print('copy of C3')
+    print(c3c)
 
-    print 'after_composition'
-    print contract_1
-    print 'copy'
-    print c1c
+    print('after_composition')
+    print(contract_1)
+    print('copy')
+    print(c1c)
 
     assert contract_1.__str__() != c1c.__str__()
     assert contract_3.__str__() != c3c.__str__()
