@@ -6,12 +6,10 @@ Author: Antonio Iannopollo
 from abc import ABCMeta, abstractmethod
 from pycolite import LOG
 
-class Subject:
+class Subject(metaclass=ABCMeta):
     '''
     Define a subject
     '''
-
-    __metaclass__ = ABCMeta
 
     def __init__(self):
         '''initialize internal data structures '''
@@ -48,11 +46,10 @@ class Subject:
         '''set subject state'''
         pass
 
-class Observer(object):
+class Observer(metaclass=ABCMeta):
     '''
     Define a Observer
     '''
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def update(self, updated_subject):

@@ -139,7 +139,7 @@ class LTLFormula(Observer):
         Returns a dictionary view including all the literals in the formula
         '''
 
-        return self.literals.viewitems()
+        return self.literals.items()
 
     def __repr__(self):
         '''
@@ -183,9 +183,9 @@ class Literal(Attribute, LTLFormula):
             symbol_set = BaseSymbolSet
 
         if with_base_names:
-            return prefix + self.literals.values()[0].base_name
+            return prefix + list(self.literals.values())[0].base_name
         else:
-            return prefix + self.literals.values()[0].unique_name
+            return prefix + list(self.literals.values())[0].unique_name
 
     def update(self, updated_subject):
         '''
@@ -297,7 +297,7 @@ class BinaryFormula(LTLFormula):
         Returns all literals looking recursively in all the formula
         object structure
         '''
-        return self.literals.viewitems() | self.left_formula.get_literal_items() \
+        return self.literals.items() | self.left_formula.get_literal_items() \
                 | self.right_formula.get_literal_items()
 
 
@@ -311,7 +311,7 @@ class BinaryFormula(LTLFormula):
         left_side_literals = dict(self.left_formula.get_literal_items())
         right_side_literals = dict(self.right_formula.get_literal_items())
 
-        for key in (left_side_literals.viewkeys() & right_side_literals.viewkeys()):
+        for key in (left_side_literals.keys() & right_side_literals.keys()):
 
             conflict_list.append( (left_side_literals[key], right_side_literals[key]) )
 
@@ -465,7 +465,7 @@ class UnaryFormula(LTLFormula):
         object structure
         '''
 
-        return self.literals.viewitems() | self.right_formula.get_literal_items()
+        return self.literals.items() | self.right_formula.get_literal_items()
 
 
     def update(self, updated_subject):

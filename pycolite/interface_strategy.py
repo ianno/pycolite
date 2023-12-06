@@ -8,12 +8,10 @@ Author: Antonio Iannopollo
 
 from abc import ABCMeta, abstractmethod
 
-class RefinementStrategy:
+class RefinementStrategy(metaclass=ABCMeta):
     '''
     Metaclass defining the refinement strategy operations
     '''
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def check_refinement(self, abstract_contract):
@@ -27,12 +25,10 @@ class RefinementStrategy:
         '''
         raise NotImplementedError
 
-class CompatibilityStrategy:
+class CompatibilityStrategy(metaclass=ABCMeta):
     '''
     Metaclass defining the compatibility check set of operations
     '''
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def check_compatibility(self):
@@ -44,12 +40,10 @@ class CompatibilityStrategy:
         '''
         raise NotImplementedError
 
-class ConsistencyStrategy:
+class ConsistencyStrategy(metaclass=ABCMeta):
     '''
     Metaclass defining the consistency check set of operations
     '''
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def check_consistency(self):
@@ -64,12 +58,10 @@ class ConsistencyStrategy:
         raise NotImplementedError
 
 
-class DeterminismStrategy:
+class DeterminismStrategy(metaclass=ABCMeta):
     '''
     Metaclass defining the determinism strategy operations
     '''
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def check_determinism(self, include_trace=False):
@@ -81,12 +73,10 @@ class DeterminismStrategy:
         '''
         raise NotImplementedError
 
-class ApproximationStrategy:
+class ApproximationStrategy(metaclass=ABCMeta):
     '''
     Metaclass defining the approximation strategy operations
     '''
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def check_approximation(self, more_defined_contract):

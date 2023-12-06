@@ -20,6 +20,7 @@ from pycolite.nuxmv import (NuxmvRefinementStrategy, NuxmvCompatibilityStrategy,
 from abc import ABCMeta, abstractmethod
 from pycolite import LOG
 from pycolite.types import Int, Bool, Float, FrozenInt, FrozenBool
+from functools import reduce
 
 LOG.debug('in contract.py')
 
@@ -47,8 +48,8 @@ def verify_refinement(refined, abstract, refinement_mapping=None, strategy_obj=N
     #connect ports previously connected and not in the mapping
     #TODO
     #inefficient
-    for port_a in refined.ports_dict.values():
-        for port_b in abstract.ports_dict.values():
+    for port_a in list(refined.ports_dict.values()):
+        for port_b in list(abstract.ports_dict.values()):
             if port_a.is_connected_to(port_b):
                 refined_copy.connect_to_port(refined_copy.ports_dict[port_a.base_name],
                                      abstract_copy.ports_dict[port_b.base_name])
@@ -91,8 +92,8 @@ def verify_approximation(approximate, more_defined, approximation_mapping=None, 
     #connect ports previously connected and not in the mapping
     #TODO
     #inefficient
-    for port_a in more_defined.ports_dict.values():
-        for port_b in approximate.ports_dict.values():
+    for port_a in list(more_defined.ports_dict.values()):
+        for port_b in list(approximate.ports_dict.values()):
             if port_a.is_connected_to(port_b):
                 defined_copy.connect_to_port(defined_copy.ports_dict[port_a.base_name],
                                      approximate_copy.ports_dict[port_b.base_name])
@@ -203,10 +204,10 @@ class Contract(object):
         #start assuming the input and output lists are including literals
         try:
             self.input_ports_dict = \
-                    {key: value for (key, value) in input_ports.items()}
+                    {key: value for (key, value) in list(input_ports.items())}
 
             if any([isinstance(val, str)
-                    for val in self.input_ports_dict.values()]):
+                    for val in list(self.input_ports_dict.values())]):
                 raise AttributeError
 
         #in case input_ports is a list of string, we'll try to match
@@ -245,17 +246,17 @@ class Contract(object):
             self.input_ports_dict = {key : None for key in input_ports}
         else:
             #set_types
-            for (key, value) in input_ports.items():
+            for (key, value) in list(input_ports.items()):
                 self.type_dir[key] = value.l_type
             #register this contract as the port owner
-            for port in self.input_ports_dict.viewvalues():
+            for port in self.input_ports_dict.values():
                 port.contract = self
         #and outputs
         try:
             self.output_ports_dict = \
-                    {key: value for (key, value) in output_ports.items()}
+                    {key: value for (key, value) in list(output_ports.items())}
 
-            if any([isinstance(val, str) for val in self.output_ports_dict.values()]):
+            if any([isinstance(val, str) for val in list(self.output_ports_dict.values())]):
                 raise AttributeError
         #in case input_ports is a list of string, we'll try to match
         #literals in the formula
@@ -292,16 +293,16 @@ class Contract(object):
             self.output_ports_dict = {key : None for key in output_ports}
         else:
             #set_types
-            for (key, value) in output_ports.items():
+            for (key, value) in list(output_ports.items()):
                 self.type_dir[key] = value.l_type
             #register this contract as the port owner
-            for port in self.output_ports_dict.viewvalues():
+            for port in self.output_ports_dict.values():
                 port.contract = self
 
         #try process input and outport ports
         #if a port is associated with None, a literal will be searched
         #in formulae, otherwise a new Port is created
-        for literal_name in self.ports_dict.viewkeys():
+        for literal_name in self.ports_dict.keys():
             #port lookup looks for the correct dictionary
             port_dict = self.port_lookup(literal_name)
 
@@ -327,10 +328,10 @@ class Contract(object):
 
         #we need to make sure there are not ports which are both input and
         #output
-        if not set(self.input_ports_dict.viewkeys()).isdisjoint( \
-                set(self.output_ports_dict.viewkeys())):
-            raise PortDeclarationError(self.input_ports_dict.viewkeys() & \
-                    self.output_ports_dict.viewkeys())
+        if not set(self.input_ports_dict.keys()).isdisjoint( \
+                set(self.output_ports_dict.keys())):
+            raise PortDeclarationError(self.input_ports_dict.keys() & \
+                    self.output_ports_dict.keys())
 
 
         #now we need to check that the declared input and output ports
@@ -347,8 +348,8 @@ class Contract(object):
         #sometimes some literals in formulae do not have a match
         #we can try to match them with known ports based on their base_name
         if self.infer_ports:
-            for key in self.formulae_reverse_dict.viewkeys() - \
-                    self.reverse_ports_dict.viewkeys():
+            for key in self.formulae_reverse_dict.keys() - \
+                    self.reverse_ports_dict.keys():
 
                 literals = self.formulae_reverse_dict[key]
                 for literal in literals:
@@ -378,7 +379,7 @@ class Contract(object):
         literal_unames = set([literal.unique_name for _, literal in literals])
 
         # match literals and ports
-        ports = set([port for port in self.ports_dict.values() if port.unique_name in literal_unames])
+        ports = set([port for port in list(self.ports_dict.values()) if port.unique_name in literal_unames])
 
 
         return ports
@@ -412,7 +413,7 @@ class Contract(object):
 
         #create ports
         new_inputs = {}
-        for name, port in self.input_ports_dict.items():
+        for name, port in list(self.input_ports_dict.items()):
 
             if port.unique_name in literals:
                 #set types
@@ -425,7 +426,7 @@ class Contract(object):
 
 
         new_outputs = {}
-        for name, port in self.output_ports_dict.items():
+        for name, port in list(self.output_ports_dict.items()):
             if port.unique_name in literals:
                 #set types
                 literals[port.unique_name].l_type = port.l_type
@@ -641,14 +642,14 @@ class Contract(object):
 
         description.append('\tInput ports:\n')
 
-        for base_name, port in self.input_ports_dict.items():
+        for base_name, port in list(self.input_ports_dict.items()):
 
             description.append('\t\t%s ( %s ) : %s\n' % \
                     (port.unique_name, base_name, port.l_type))
 
         description.append('\tOutput ports:\n')
 
-        for base_name, port in self.output_ports_dict.items():
+        for base_name, port in list(self.output_ports_dict.items()):
             description.append('\t\t%s ( %s ) : %s\n' % \
                     (port.unique_name, base_name, port.l_type))
 
@@ -669,9 +670,9 @@ class Contract(object):
         in which it is defined
         '''
 
-        if literal_name in self.input_ports_dict.viewkeys():
+        if literal_name in self.input_ports_dict.keys():
             port_dict = self.input_ports_dict
-        elif literal_name in self.output_ports_dict.viewkeys():
+        elif literal_name in self.output_ports_dict.keys():
             port_dict = self.output_ports_dict
         else:
             raise KeyError('port not defined for literal %s' % literal_name)
@@ -685,9 +686,13 @@ class Contract(object):
         IF it is present, returns the
         requested port, otherwise raises a AttributeError exception
         '''
+        if ('input_ports_dict' not in self.__dict__) or ('output_ports_dict' not in self.__dict__):
+            raise AttributeError
 
-        if port_name in self.ports_dict:
-            return self.ports_dict[port_name]
+        lookup_dict = dict( list(self.__dict__['input_ports_dict'].items()) + \
+                        list(self.__dict__['output_ports_dict'].items()) )
+        if port_name in lookup_dict:
+            return lookup_dict[port_name]
         else:
             raise AttributeError
 
@@ -697,8 +702,8 @@ class Contract(object):
         '''
         Returns an updated set of port names
         '''
-        return self.input_ports_dict.viewkeys() | \
-                self.output_ports_dict.viewkeys()
+        return self.input_ports_dict.keys() | \
+                self.output_ports_dict.keys()
 
 
     @property
@@ -706,16 +711,16 @@ class Contract(object):
         '''
         Return an update dict of all the contract ports
         '''
-        return dict( self.input_ports_dict.items() + \
-                        self.output_ports_dict.items() )
+        return dict( list(self.input_ports_dict.items()) + \
+                        list(self.output_ports_dict.items()) )
 
     @property
     def reverse_ports_dict(self):
         '''
         Returns a dict which has uniques names as keys, and ports as values
         '''
-        return dict( self.reverse_input_ports_dict.items() + \
-                        self.reverse_output_ports_dict.items())
+        return dict( list(self.reverse_input_ports_dict.items()) + \
+                        list(self.reverse_output_ports_dict.items()))
 
     @property
     def reverse_input_ports_dict(self):
@@ -723,9 +728,9 @@ class Contract(object):
         Returns a dict which has uniques names as keys, and ports as values
         '''
         return {key_port.unique_name:
-                [port for port in self.input_ports_dict.values()
+                [port for port in list(self.input_ports_dict.values())
                  if port.unique_name == key_port.unique_name]
-                for key_port in self.input_ports_dict.viewvalues()}
+                for key_port in self.input_ports_dict.values()}
 
         #return {key: value for (key, value) in zip( \
         #        [port.unique_name \
@@ -738,9 +743,9 @@ class Contract(object):
         Returns a dict which has uniques names as keys, and ports as values
         '''
         return {key_port.unique_name:
-                [port for port in self.output_ports_dict.values()
+                [port for port in list(self.output_ports_dict.values())
                  if port.unique_name == key_port.unique_name]
-                for key_port in self.output_ports_dict.viewvalues()}
+                for key_port in self.output_ports_dict.values()}
 
         #return {key: value for (key, value) in zip( \
         #        [port.unique_name \
@@ -768,8 +773,8 @@ class Contract(object):
 
         try:
             #unzip
-            _, values = zip(* (self.assume_formula.get_literal_items() | \
-                            self.guarantee_formula.get_literal_items()))
+            _, values = list(zip(* (self.assume_formula.get_literal_items() | \
+                            self.guarantee_formula.get_literal_items())))
         except ValueError:
             LOG.debug('no literals??')
             return {}
@@ -790,14 +795,14 @@ class Contract(object):
             raise NonCompositeContractError()
 
         origin_set = set()
-        look_list = self.origin_contracts.values()
+        look_list = list(self.origin_contracts.values())
 
         for contract in look_list:
             try:
                 #access the composite list of c.
                 #if c has no origin contracts, is what we are looking for.
                 #otherwise expand look_list
-                look_list += contract.origin_contracts.values()
+                look_list += list(contract.origin_contracts.values())
             except NonCompositeContractError:
                 origin_set.add(contract)
 
@@ -875,7 +880,7 @@ class RefinementMapping(object):
         new_contracts = {contract: contract.copy() for contract in self.contracts}
 
         #create a new mapping in a polymorphic fashion
-        new_mapping = type(self)(new_contracts.values())
+        new_mapping = type(self)(list(new_contracts.values()))
         for (port_a, port_b) in self.mapping:
             new_mapping.add(new_contracts[port_a.contract].ports_dict[port_a.base_name],
                             new_contracts[port_b.contract].ports_dict[port_b.base_name])
@@ -1020,7 +1025,7 @@ class CompositionMapping(object):
             #                for port in (port_set - reverse_map.viewkeys())])
             #     LOG.debug(reverse_map)
             #     raise PortMappingError()
-            for port in port_set - set(reverse_map.viewkeys()):
+            for port in port_set - set(reverse_map.keys()):
                 name = '%s-%s' %(port.contract.unique_name, port.base_name)
                 if name not in self.mapping:
                     self.mapping[name] = set()
@@ -1029,7 +1034,7 @@ class CompositionMapping(object):
 
         #connect and check port consistency
         #LOG.debug(self.mapping)
-        for (name, port_set) in self.mapping.viewitems():
+        for (name, port_set) in self.mapping.items():
 
             #we need to connects all the ports in port_set
             #error if we try to connect mulptiple outputs
@@ -1060,19 +1065,19 @@ class CompositionMapping(object):
         #port names
         input_pool = {name: Port(name, l_type = port.l_type, literal=port.literal, context=self.context)#port
                       for contract in self.contracts
-                      for (name, port) in contract.input_ports_dict.viewitems()}
+                      for (name, port) in contract.input_ports_dict.items()}
 
         output_pool = {name: Port(name, l_type = port.l_type, literal=port.literal, context=self.context)#port
                        for contract in self.contracts
-                       for (name, port) in contract.output_ports_dict.viewitems()}
+                       for (name, port) in contract.output_ports_dict.items()}
 
 
 
         mapped_ports = set([port.base_name for port in reverse_map])
         #LOG.debug(mapped_ports)
 
-        implicit_input_names = input_pool.viewkeys() - mapped_ports
-        implicit_output_names = output_pool.viewkeys() - mapped_ports
+        implicit_input_names = input_pool.keys() - mapped_ports
+        implicit_output_names = output_pool.keys() - mapped_ports
 
         filtered_inputs = implicit_input_names - implicit_output_names
 
@@ -1080,7 +1085,7 @@ class CompositionMapping(object):
 
         for name in filtered_inputs:
             #also, check for feedback loops or connected I/O and do not add inputs in case
-            if not any([input_pool[name].is_connected_to(port) for port in output_pool.viewvalues()]):
+            if not any([input_pool[name].is_connected_to(port) for port in output_pool.values()]):
                 new_input_ports[name] = Port(name, l_type = input_pool[name].l_type, literal=input_pool[name].literal,
                                              context=self.context)
         for name in implicit_output_names:
@@ -1100,7 +1105,7 @@ class CompositionMapping(object):
         Returns a dictionary with port as key and mapped name as value
         '''
         #LOG.debug(self.mapping.viewitems())
-        return {port: name for (name, port_set) in self.mapping.viewitems() for port in port_set}
+        return {port: name for (name, port_set) in self.mapping.items() for port in port_set}
 
 PortMapping.register(CompositionMapping)
 

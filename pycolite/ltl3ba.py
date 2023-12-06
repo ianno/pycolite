@@ -10,7 +10,7 @@ from tempfile import NamedTemporaryFile
 from subprocess import check_output
 from pycolite.formula import Negation, Implication
 from pycolite.symbol_sets import Ltl3baSymbolSet
-from ConfigParser import SafeConfigParser
+from configparser import ConfigParser
 from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, LTL3BA_OPT
 import os
 from pycolite import LOG
@@ -37,7 +37,7 @@ class Ltl3baPathLoader(object):
 
             config_path = os.path.join(here, os.pardir, CONFIG_FILE_RELATIVE_PATH)
 
-            config = SafeConfigParser()
+            config = ConfigParser()
             filep = open(config_path)
 
             config.readfp(filep)
@@ -70,7 +70,7 @@ def is_empty_formula(formula, prefix='',
 
     temp_file = NamedTemporaryFile( \
             prefix='%s' % prefix,
-            dir=TEMP_FILES_PATH, suffix='.ltl', delete=delete_file)
+            dir=TEMP_FILES_PATH, suffix='.ltl', delete=delete_file, mode="w")
 
     with temp_file:
         formula_str = formula.generate(symbol_set=Ltl3baSymbolSet, \

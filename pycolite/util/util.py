@@ -8,7 +8,7 @@ Author: Antonio Iannopollo
 '''
 
 import os
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 import logging
 
 LOG = logging.getLogger()
@@ -55,7 +55,7 @@ def create_main_config_file(filepath, section_list, option_dict):
     Create main config file given the current module path
     '''
 
-    config = SafeConfigParser()
+    config = ConfigParser()
 
     for section in section_list:
         config.add_section(section)

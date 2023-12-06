@@ -9,14 +9,14 @@ Author: Antonio Iannopollo
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 import os
 import pycolite.util.util as util
-from configparser import SafeConfigParser, NoSectionError, NoOptionError, ParsingError
+from configparser import ConfigParser, NoSectionError, NoOptionError, ParsingError
 import sys
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 
 #load setup.cfg
-setup_cfg = SafeConfigParser()
+setup_cfg = ConfigParser()
 
 with open('setup.cfg') as filep:
     try:

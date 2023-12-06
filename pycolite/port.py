@@ -172,13 +172,11 @@ class Port(Observer):
 
 
 
-class PortMapping:
+class PortMapping(metaclass=ABCMeta):
     '''
     Encapsulate the information needed to remap a set of ports
     to another
     '''
-
-    __metaclass__ = ABCMeta
 
     def __init__(self):
         '''

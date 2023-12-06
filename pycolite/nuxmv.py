@@ -10,13 +10,14 @@ from tempfile import NamedTemporaryFile
 from subprocess import check_output, STDOUT
 from pycolite.formula import *
 from pycolite.symbol_sets import NusmvSymbolSet
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT, NUXMV_CMD_FILENAME_NOLOOP
 import os
 from pycolite import LOG
 from pycolite.types import Bool, Int, FrozenInt, Float, FrozenBool, FrozenVar
 from pycolite.util.util import NUXMV_CMD_FILENAME, NUXMV_BOUND, LTL2SMV
 from pycolite.attribute import Attribute
+from functools import reduce
 
 #OPT_NUXMV = '-coi'
 # CMD_OPT = ['-dynamic', '-coi', '-df', '-bmc']
@@ -99,10 +100,10 @@ class NuxmvPathLoader(object):
 
             config_path = os.path.join(here, os.pardir, CONFIG_FILE_RELATIVE_PATH)
 
-            config = SafeConfigParser()
+            config = ConfigParser()
             filep = open(config_path)
 
-            config.readfp(filep)
+            config.read_file(filep)
 
             cls.nuxmv_path = config.get(TOOL_SECT, NUXMV_OPT)
 
@@ -198,7 +199,7 @@ def verify_tautology_smv(smv_txt, prefix='',
 
     temp_file = NamedTemporaryFile(
         prefix='%s' % prefix,
-        dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file)
+        dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file, mode="w")
 
 
     with temp_file:
@@ -210,7 +211,7 @@ def verify_tautology_smv(smv_txt, prefix='',
 
         # output = check_output([tool_location, CMD_OPT, temp_file.name])
         output = check_output([tool_location] + CMD_OPT + [source_location] + [temp_file.name],
-                              stderr=STDOUT, )
+                              stderr=STDOUT, ).decode()
         # LOG.critical(output)
         # LOG.debug(output.endswith(NUXMV_FALSE))
         lines = output.splitlines()
@@ -369,7 +370,7 @@ def derive_valuation_from_trace(trace, variables, max_horizon=None):
 
         inner = []
 
-        for u_name, val in time_sequence[i].items():
+        for u_name, val in list(time_sequence[i].items()):
             inner.append(Equivalence(unique_names[u_name].literal, val, merge_literals=False))
 
         if len(inner) > 0:
@@ -597,7 +598,7 @@ def build_module_from_trace(trace, variables, module_name='instance'):
     states = len(time_sequence)
     # module = 'MODULE %s(s)\n  VAR state: 0..%d;\n' % (module_name, states)
     module = 'MODULE %s(s)\n  VAR state: integer;\n' % (module_name)
-    init_vs = ['s.%s = %s' % (uname, val) for (uname, val) in time_sequence[0].items()]
+    init_vs = ['s.%s = %s' % (uname, val) for (uname, val) in list(time_sequence[0].items())]
 
     # we need to define the first variable assignment in the INIT section, otherwise the module
     # might deadlock. each state will then define the next variable step.
@@ -609,7 +610,7 @@ def build_module_from_trace(trace, variables, module_name='instance'):
     module = module + init
 
     for i in range(0, len(time_sequence)):
-        trans_vs = ['next(s.%s) = %s' % (uname, val) for (uname, val) in time_sequence[i].items()]
+        trans_vs = ['next(s.%s) = %s' % (uname, val) for (uname, val) in list(time_sequence[i].items())]
 
         next_state = i+1
         #manage last trans
@@ -644,7 +645,7 @@ def ltl2smv(formula, prefix=None, include_vars=None, parameters=None, delete_fil
         parameters = []
 
     temp_file = NamedTemporaryFile(
-        dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file)
+        dir=TEMP_FILES_PATH, suffix='.smv', delete=delete_file, mode="w")
 
     formula_str = formula.generate(symbol_set=NusmvSymbolSet,
                                    ignore_precedence=True)
@@ -658,7 +659,7 @@ def ltl2smv(formula, prefix=None, include_vars=None, parameters=None, delete_fil
 
         # output = check_output([tool_location, CMD_OPT, temp_file.name])
         output = check_output([ltl2smv_location] + [prefix] + [temp_file.name],
-                              stderr=STDOUT, )
+                              stderr=STDOUT, ).decode()
 
         #now process string to add var declaration
         out_lines = output.split('\n')
@@ -922,7 +923,7 @@ class NuxmvDeterminismStrategy(NuxmvContractInterface):
 
         #all parameters are also  the same
         p_list = [TrueFormula()]
-        for n, port in self.contract.output_ports_dict.items():
+        for n, port in list(self.contract.output_ports_dict.items()):
             if isinstance(port.l_type, FrozenVar):
                 p_list.append(Globally(Equivalence(c1.output_ports_dict[n].literal,
                                                     c2.output_ports_dict[n].literal,
