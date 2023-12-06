@@ -10,7 +10,7 @@ from tempfile import NamedTemporaryFile
 from subprocess import check_output, STDOUT
 from pycolite.formula import *
 from pycolite.symbol_sets import NusmvSymbolSet
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from pycolite.util.util import CONFIG_FILE_RELATIVE_PATH, TOOL_SECT, NUXMV_OPT, NUXMV_CMD_FILENAME_NOLOOP
 import os
 from pycolite import LOG
