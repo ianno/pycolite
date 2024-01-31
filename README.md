@@ -39,6 +39,11 @@ python -m pytest
 ```
 After executing the last command, you should get a message saying that all the tests were passed.
 
+### SCP 24
+If you are looking for the code used for our SCP submission, consider installing the code [here](https://github.com/ianno/pycolite/tree/scp24). A reproducibility package is being built but that branch contains the updated code that can be used right away.
+That code in that branch, however, is somewhat different than the rest of this repo, and some commands referenced in this README might not work.
+
+
 ## Citations
 Please **acknowledge** the use of pycolite by citing this Github repository and the article:
 
