@@ -533,7 +533,7 @@ def build_module_from_trace(trace, variables, module_name='instance'):
     lines = trace.split('\n')
 
     after_preamble = False
-    pre_trace = True
+    # pre_trace = True
     lasso_index = -1
 
     for line in lines:
