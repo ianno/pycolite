@@ -40,7 +40,7 @@ python -m pytest
 After executing the last command, you should get a message saying that all the tests were passed.
 
 ### SCP 24
-If you are looking for the code used for our SCP submission, consider installing the code [here](https://github.com/ianno/pycolite/tree/scp24). That branch contains the code used in the experimental section of the paper.
+If you are looking for the code used for our SCP submission, you are looking for the code [in this branch](https://github.com/ianno/pycolite/tree/scp24) (or this [pre-release](https://github.com/ianno/pycolite/releases/tag/SCP24)). That branch contains the code used in the experimental section of the paper.
 That code, however, is somewhat different than the rest of this repo, and some commands referenced in this README might not work.
 This version requires nuXmv 1.1.1.
 
